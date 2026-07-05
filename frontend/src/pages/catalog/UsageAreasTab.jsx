@@ -38,7 +38,7 @@ export default function UsageAreasTab() {
   const createMutation = useMutation({
     mutationFn: createUsageArea,
     onSuccess: () => {
-      toastSuccess("เพิ่มพื้นที่ใช้งานแล้ว");
+      toastSuccess("ເພີ່ມພື້ນທີ່ໃຊ້ງານແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -48,7 +48,7 @@ export default function UsageAreasTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateUsageArea(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -83,34 +83,34 @@ export default function UsageAreasTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={openCreate}>+ เพิ่มพื้นที่ใช้งาน</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມພື້ນທີ່ໃຊ້ງານ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อ (ลาว)</th>
-            <th className="px-4 py-2">ชื่อ (จีน)</th>
-            <th className="px-4 py-2">สาขา</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ຊື່ (ລາວ)</th>
+            <th className="px-4 py-3">ຊື່ (ຈີນ)</th>
+            <th className="px-4 py-3">ສາຂາ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((u) => (
             <tr key={u.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {u.name_lo}
               </td>
-              <td className="px-4 py-2">{u.name_cn || "-"}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">{u.name_cn || "-"}</td>
+              <td className="px-4 py-3">
                 {branches?.find((b) => b.id === u.branch_id)?.name || "-"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(u)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -120,18 +120,18 @@ export default function UsageAreasTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขพื้นที่ใช้งาน" : "เพิ่มพื้นที่ใช้งาน"}
+        title={editingId ? "ແກ້ໄຂພື້ນທີ່ໃຊ້ງານ" : "ເພີ່ມພື້ນທີ່ໃຊ້ງານ"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="สาขา">
+          <FormField label="ສາຂາ">
             <select
               className={selectClass}
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
               required
             >
-              <option value="">-- เลือกสาขา --</option>
+              <option value="">-- ເລືອກສາຂາ --</option>
               {branches?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -139,7 +139,7 @@ export default function UsageAreasTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="ชื่อ (ลาว)">
+          <FormField label="ຊື່ (ລາວ)">
             <input
               className={inputClass}
               value={form.nameLo}
@@ -147,7 +147,7 @@ export default function UsageAreasTab() {
               required
             />
           </FormField>
-          <FormField label="ชื่อ (จีน)">
+          <FormField label="ຊື່ (ຈີນ)">
             <input
               className={inputClass}
               value={form.nameCn}
@@ -160,13 +160,13 @@ export default function UsageAreasTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

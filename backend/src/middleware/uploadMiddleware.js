@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 
 function fileFilter(req, file, cb) {
   if (!ALLOWED_MIME.includes(file.mimetype)) {
-    return cb(new AppError(400, "รองรับเฉพาะไฟล์ภาพ JPEG, PNG, WEBP"));
+    return cb(new AppError(400, "ຮອງຮັບສະເພາະໄຟລ໌ຮູບພາບ JPEG, PNG, WEBP"));
   }
   cb(null, true);
 }

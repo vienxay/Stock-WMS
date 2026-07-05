@@ -33,7 +33,7 @@ async function findRequisitionOr404(runner, id) {
   const [rows] = await runner.query("SELECT * FROM requisitions WHERE id = ?", [
     id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบใบขอเบิกนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບໃບຂໍເບີກນີ້");
   return rows[0];
 }
 
@@ -123,7 +123,7 @@ const createRequisition = asyncHandler(async (req, res) => {
 const approveRequisition = asyncHandler(async (req, res) => {
   const requisition = await findRequisitionOr404(pool, req.params.id);
   if (requisition.status !== "PENDING") {
-    throw new AppError(400, "ใบขอเบิกนี้ถูกดำเนินการไปแล้ว");
+    throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
   }
   await pool.query(
     `UPDATE requisitions SET status = 'APPROVED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
@@ -136,7 +136,7 @@ const approveRequisition = asyncHandler(async (req, res) => {
 const rejectRequisition = asyncHandler(async (req, res) => {
   const requisition = await findRequisitionOr404(pool, req.params.id);
   if (requisition.status !== "PENDING") {
-    throw new AppError(400, "ใบขอเบิกนี้ถูกดำเนินการไปแล้ว");
+    throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
   }
   await pool.query(
     `UPDATE requisitions SET status = 'REJECTED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
@@ -156,7 +156,7 @@ const issueRequisition = asyncHandler(async (req, res) => {
 
     const requisition = await findRequisitionOr404(conn, req.params.id);
     if (requisition.status !== "APPROVED") {
-      throw new AppError(400, "ต้องอนุมัติใบขอเบิกนี้ก่อนจึงจะจ่ายของได้");
+      throw new AppError(400, "ຕ້ອງອະນຸມັດໃບຂໍເບີກນີ້ກ່ອນຈຶ່ງຈະຈ່າຍເຄື່ອງໄດ້");
     }
 
     for (const item of body.items) {
@@ -167,7 +167,7 @@ const issueRequisition = asyncHandler(async (req, res) => {
         [item.itemId, req.params.id],
       );
       if (!itemRows.length)
-        throw new AppError(404, `ไม่พบรายการเบิก id ${item.itemId}`);
+        throw new AppError(404, `ບໍ່ພົບລາຍການເບີກ id ${item.itemId}`);
 
       await conn.query(
         "UPDATE requisition_items SET quantity_issued = ? WHERE id = ?",

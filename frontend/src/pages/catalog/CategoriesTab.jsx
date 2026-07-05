@@ -38,7 +38,7 @@ export default function CategoriesTab() {
   const createMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: () => {
-      toastSuccess("เพิ่มหมวดหมู่แล้ว");
+      toastSuccess("ເພີ່ມໝວດໝູ່ແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -48,7 +48,7 @@ export default function CategoriesTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateCategory(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -83,34 +83,34 @@ export default function CategoriesTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={openCreate}>+ เพิ่มหมวดหมู่</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມໝວດໝູ່</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อ (ลาว)</th>
-            <th className="px-4 py-2">ชื่อ (จีน)</th>
-            <th className="px-4 py-2">กลุ่มสินค้า</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ຊື່ (ລາວ)</th>
+            <th className="px-4 py-3">ຊື່ (ຈີນ)</th>
+            <th className="px-4 py-3">ກຸ່ມສິນຄ້າ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((c) => (
             <tr key={c.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {c.name_lo}
               </td>
-              <td className="px-4 py-2">{c.name_cn || "-"}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">{c.name_cn || "-"}</td>
+              <td className="px-4 py-3">
                 {groups?.find((g) => g.id === c.group_id)?.name_lo || "-"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(c)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -120,18 +120,18 @@ export default function CategoriesTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขหมวดหมู่" : "เพิ่มหมวดหมู่"}
+        title={editingId ? "ແກ້ໄຂໝວດໝູ່" : "ເພີ່ມໝວດໝູ່"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="กลุ่มสินค้า">
+          <FormField label="ກຸ່ມສິນຄ້າ">
             <select
               className={selectClass}
               value={form.groupId}
               onChange={(e) => setForm({ ...form, groupId: e.target.value })}
               required
             >
-              <option value="">-- เลือกกลุ่มสินค้า --</option>
+              <option value="">-- ເລືອກກຸ່ມສິນຄ້າ --</option>
               {groups?.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name_lo}
@@ -139,7 +139,7 @@ export default function CategoriesTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="ชื่อ (ลาว)">
+          <FormField label="ຊື່ (ລາວ)">
             <input
               className={inputClass}
               value={form.nameLo}
@@ -147,7 +147,7 @@ export default function CategoriesTab() {
               required
             />
           </FormField>
-          <FormField label="ชื่อ (จีน)">
+          <FormField label="ຊື່ (ຈີນ)">
             <input
               className={inputClass}
               value={form.nameCn}
@@ -160,13 +160,13 @@ export default function CategoriesTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

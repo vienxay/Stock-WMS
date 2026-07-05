@@ -17,7 +17,7 @@ async function findStockTakeOr404(runner, id) {
   const [rows] = await runner.query("SELECT * FROM stock_takes WHERE id = ?", [
     id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบรอบตรวจนับนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບຮອບກວດນັບນີ້");
   return rows[0];
 }
 
@@ -103,14 +103,14 @@ const updateCount = asyncHandler(async (req, res) => {
 
   const stockTake = await findStockTakeOr404(pool, req.params.id);
   if (stockTake.status !== "IN_PROGRESS") {
-    throw new AppError(400, "รอบตรวจนับนี้ปิดไปแล้ว แก้ไขไม่ได้");
+    throw new AppError(400, "ຮອບກວດນັບນີ້ປິດໄປແລ້ວ ແກ້ໄຂບໍ່ໄດ້");
   }
 
   const [result] = await pool.query(
     `UPDATE stock_take_items SET counted_qty = ? WHERE id = ? AND stock_take_id = ?`,
     [body.countedQty, req.params.itemId, req.params.id],
   );
-  if (!result.affectedRows) throw new AppError(404, "ไม่พบรายการนับนี้");
+  if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບລາຍການນັບນີ້");
 
   const [rows] = await pool.query(
     "SELECT * FROM stock_take_items WHERE id = ?",
@@ -128,7 +128,7 @@ const completeStockTake = asyncHandler(async (req, res) => {
 
     const stockTake = await findStockTakeOr404(conn, req.params.id);
     if (stockTake.status !== "IN_PROGRESS") {
-      throw new AppError(400, "รอบตรวจนับนี้ปิดไปแล้ว");
+      throw new AppError(400, "ຮອບກວດນັບນີ້ປິດໄປແລ້ວ");
     }
 
     const [items] = await conn.query(
@@ -153,7 +153,7 @@ const completeStockTake = asyncHandler(async (req, res) => {
             : undefined,
         referenceTable: "stock_takes",
         referenceId: stockTake.id,
-        note: `ปรับยอดจากตรวจนับ: ระบบ ${item.system_qty} นับได้ ${item.counted_qty}`,
+        note: `ປັບຍອດຈາກການກວດນັບ: ລະບົບ ${item.system_qty} ນັບໄດ້ ${item.counted_qty}`,
         createdBy: req.user.sub,
       });
     }

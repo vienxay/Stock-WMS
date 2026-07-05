@@ -10,6 +10,8 @@ export const createProduct = (body) =>
   apiClient.post("/products", body).then((r) => r.data);
 export const updateProduct = (id, body) =>
   apiClient.put(`/products/${id}`, body).then((r) => r.data);
+export const deleteProduct = (id) =>
+  apiClient.delete(`/products/${id}`).then((r) => r.data);
 
 export const uploadProductImage = (id, file, isPrimary) => {
   const form = new FormData();

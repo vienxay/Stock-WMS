@@ -45,7 +45,7 @@ export default function StockTakeDetailPage() {
   const completeMutation = useMutation({
     mutationFn: () => completeStockTake(id),
     onSuccess: () => {
-      toastSuccess("ปิดรอบตรวจนับแล้ว ปรับสต็อกตามผลต่างเรียบร้อย");
+      toastSuccess("ປິດຮອບກວດນັບແລ້ວ ປັບສະຕັອກຕາມຜົນຕ່າງຮຽບຮ້ອຍ");
       invalidate();
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -53,8 +53,8 @@ export default function StockTakeDetailPage() {
 
   const handleComplete = async () => {
     const result = await confirmAction({
-      title: "ปิดรอบตรวจนับ?",
-      text: "ระบบจะปรับยอดสต็อกตามผลต่างที่นับได้ทันที แก้ไขย้อนหลังไม่ได้",
+      title: "ປິດຮອບກວດນັບ?",
+      text: "ລະບົບຈະປັບຍອດສະຕັອກຕາມຜົນຕ່າງທີ່ນັບໄດ້ທັນທີ ແກ້ໄຂຍ້ອນຫຼັງບໍ່ໄດ້",
     });
     if (result.isConfirmed) completeMutation.mutate();
   };
@@ -66,40 +66,40 @@ export default function StockTakeDetailPage() {
   return (
     <div>
       <Link to="/stock-takes" className="text-sm text-blue-600 hover:underline">
-        &larr; กลับไปรายการตรวจนับ
+        &larr; ກັບໄປລາຍການກວດນັບ
       </Link>
 
       <div className="flex items-center justify-between mt-2 mb-4">
         <h2 className="text-xl font-bold text-gray-800">
-          รอบตรวจนับ #{stockTake.id}
+          ຮອບກວດນັບ #{stockTake.id}
         </h2>
         <StatusBadge status={stockTake.status} />
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm p-5 mb-6 grid grid-cols-2 gap-4 text-sm">
+      <div className="bg-white rounded-lg shadow-sm p-5 mb-6 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <div className="text-gray-500">คลัง</div>
+          <div className="text-gray-500">ຄັງ</div>
           <div className="font-medium">{stockTake.warehouse_name}</div>
         </div>
         <div>
-          <div className="text-gray-500">วันที่นับ</div>
+          <div className="text-gray-500">ວັນທີນັບ</div>
           <div className="font-medium">
             {stockTake.count_date?.slice(0, 10)}
           </div>
         </div>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border mb-4">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 mb-4">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">SKU</th>
-            <th className="px-4 py-2">สินค้า</th>
-            <th className="px-4 py-2">ยอดระบบ</th>
-            <th className="px-4 py-2">นับได้จริง</th>
-            <th className="px-4 py-2">ผลต่าง</th>
+            <th className="px-4 py-3">SKU</th>
+            <th className="px-4 py-3">ສິນຄ້າ</th>
+            <th className="px-4 py-3">ຍອດລະບົບ</th>
+            <th className="px-4 py-3">ນັບໄດ້ຈິງ</th>
+            <th className="px-4 py-3">ຜົນຕ່າງ</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {stockTake.items.map((item) => (
             <StockTakeItemRow
               key={item.id}
@@ -114,7 +114,7 @@ export default function StockTakeDetailPage() {
           {!stockTake.items.length && (
             <tr>
               <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                ไม่มีสินค้าในคลังนี้ ณ วันที่เปิดรอบ
+                ບໍ່ມີສິນຄ້າໃນຄັງນີ້ ໃນວັນທີ່ເປີດຮອບ
               </td>
             </tr>
           )}
@@ -127,7 +127,7 @@ export default function StockTakeDetailPage() {
           onClick={handleComplete}
           disabled={completeMutation.isPending}
         >
-          ปิดรอบตรวจนับ
+          ປິດຮອບກວດນັບ
         </Button>
       )}
     </div>
@@ -139,12 +139,12 @@ function StockTakeItemRow({ item, editable, onSave, saving }) {
 
   return (
     <tr>
-      <td className="px-4 py-2">{item.sku}</td>
-      <td className="px-4 py-2 font-medium text-gray-800">
+      <td className="px-4 py-3">{item.sku}</td>
+      <td className="px-4 py-3 font-medium text-gray-800">
         {item.product_name}
       </td>
-      <td className="px-4 py-2">{item.system_qty}</td>
-      <td className="px-4 py-2">
+      <td className="px-4 py-3">{item.system_qty}</td>
+      <td className="px-4 py-3">
         {editable ? (
           <input
             type="number"
@@ -163,7 +163,7 @@ function StockTakeItemRow({ item, editable, onSave, saving }) {
         )}
       </td>
       <td
-        className={`px-4 py-2 font-medium ${Number(item.variance) < 0 ? "text-red-600" : Number(item.variance) > 0 ? "text-emerald-600" : ""}`}
+        className={`px-4 py-3 font-medium ${Number(item.variance) < 0 ? "text-red-600" : Number(item.variance) > 0 ? "text-emerald-600" : ""}`}
       >
         {item.variance}
       </td>

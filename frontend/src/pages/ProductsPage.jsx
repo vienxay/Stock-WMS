@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { listProducts, createProduct } from "../api/products";
+import { listProducts, createProduct, updateProduct, deleteProduct } from "../api/products";
 import { listCategories } from "../api/catalog";
 import { apiErrorMessage } from "../api/client";
-import { toastSuccess, toastError } from "../lib/toast";
+import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
+import { Pencil, Trash2 } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
@@ -51,7 +52,7 @@ export default function ProductsPage() {
   const createMutation = useMutation({
     mutationFn: createProduct,
     onSuccess: (product) => {
-      toastSuccess("เพิ่มสินค้าแล้ว");
+      toastSuccess("ເພີ່ມສິນຄ້າແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setModalOpen(false);
       setForm(EMPTY_FORM);
@@ -59,6 +60,32 @@ export default function ProductsPage() {
     },
     onError: (err) => toastError(apiErrorMessage(err)),
   });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }) => updateProduct(id, { isActive }),
+    onSuccess: () => {
+      toastSuccess("ບັນທຶກແລ້ວ");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (err) => toastError(apiErrorMessage(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      toastSuccess("ລຶບສິນຄ້າແລ້ວ");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (err) => toastError(apiErrorMessage(err)),
+  });
+
+  const handleDelete = async (p) => {
+    const result = await confirmAction({
+      title: `ລຶບ "${p.name_lo}"?`,
+      text: "ລຶບໄດ້ສະເພາະສິນຄ້າທີ່ຍັງບໍ່ເຄີຍມີປະຫວັດຮັບເຂົ້າ/ເບີກຈ່າຍ ຖ້າເຄີຍມີແລ້ວລະບົບຈະບໍ່ໃຫ້ລຶບ",
+    });
+    if (result.isConfirmed) deleteMutation.mutate(p.id);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -72,16 +99,16 @@ export default function ProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">สินค้า</h2>
+        <h2 className="text-xl font-bold text-gray-800">ສິນຄ້າ</h2>
         {canManage && (
-          <Button onClick={() => setModalOpen(true)}>+ เพิ่มสินค้า</Button>
+          <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມສິນຄ້າ</Button>
         )}
       </div>
 
       <div className="flex gap-3 mb-4">
         <input
           className={`${inputClass} max-w-xs`}
-          placeholder="ค้นหา SKU / ชื่อสินค้า / บาร์โค้ด"
+          placeholder="ຄົ້ນຫາ SKU / ຊື່ສິນຄ້າ / ບາໂຄດ"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -90,7 +117,7 @@ export default function ProductsPage() {
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
         >
-          <option value="">-- ทุกหมวดหมู่ --</option>
+          <option value="">-- ທຸກໝວດໝູ່ --</option>
           {categories?.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name_lo}
@@ -102,25 +129,26 @@ export default function ProductsPage() {
       {isLoading ? (
         <Spinner />
       ) : (
-        <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-          <thead className="bg-gray-50 text-gray-500 text-left">
+        <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+          <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              <th className="px-4 py-2"></th>
-              <th className="px-4 py-2">SKU</th>
-              <th className="px-4 py-2">ชื่อสินค้า</th>
-              <th className="px-4 py-2">หมวดหมู่</th>
-              <th className="px-4 py-2">หน่วย</th>
-              <th className="px-4 py-2">สถานะ</th>
+              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">ຊື່ສິນຄ້າ</th>
+              <th className="px-4 py-3">ໝວດໝູ່</th>
+              <th className="px-4 py-3">ໜ່ວຍ</th>
+              <th className="px-4 py-3">ສະຖານະ</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-100">
             {data?.map((p) => (
               <tr
                 key={p.id}
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => navigate(`/products/${p.id}`)}
               >
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   {p.primary_image_url ? (
                     <img
                       src={p.primary_image_url}
@@ -131,24 +159,64 @@ export default function ProductsPage() {
                     <div className="w-10 h-10 bg-gray-100 rounded" />
                   )}
                 </td>
-                <td className="px-4 py-2">{p.sku}</td>
-                <td className="px-4 py-2 font-medium text-gray-800">
+                <td className="px-4 py-3">{p.sku}</td>
+                <td className="px-4 py-3 font-medium text-gray-800">
                   {p.name_lo}
                   {p.name_cn && (
                     <span className="text-gray-400"> / {p.name_cn}</span>
                   )}
                 </td>
-                <td className="px-4 py-2">{p.category_name || "-"}</td>
-                <td className="px-4 py-2">{p.unit_lo}</td>
-                <td className="px-4 py-2">
-                  {p.is_active ? "ใช้งาน" : "ปิดใช้งาน"}
+                <td className="px-4 py-3">{p.category_name || "-"}</td>
+                <td className="px-4 py-3">{p.unit_lo}</td>
+                <td className="px-4 py-3">
+                  {canManage ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleActiveMutation.mutate({ id: p.id, isActive: !p.is_active });
+                      }}
+                      className={p.is_active ? "text-emerald-600 hover:underline" : "text-red-500 hover:underline"}
+                    >
+                      {p.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
+                    </button>
+                  ) : p.is_active ? (
+                    "ໃຊ້ງານ"
+                  ) : (
+                    "ປິດໃຊ້ງານ"
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/products/${p.id}`);
+                      }}
+                      title="ແກ້ໄຂ"
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    {canManage && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(p);
+                        }}
+                        title="ລຶບ"
+                        className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
             {!data?.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  ไม่พบสินค้า
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  ບໍ່ພົບສິນຄ້າ
                 </td>
               </tr>
             )}
@@ -158,7 +226,7 @@ export default function ProductsPage() {
 
       <Modal
         open={modalOpen}
-        title="เพิ่มสินค้า"
+        title="ເພີ່ມສິນຄ້າ"
         onClose={() => setModalOpen(false)}
         wide
       >
@@ -171,14 +239,14 @@ export default function ProductsPage() {
               required
             />
           </FormField>
-          <FormField label="บาร์โค้ด">
+          <FormField label="ບາໂຄດ">
             <input
               className={inputClass}
               value={form.barcode}
               onChange={(e) => setForm({ ...form, barcode: e.target.value })}
             />
           </FormField>
-          <FormField label="ชื่อสินค้า (ลาว)">
+          <FormField label="ຊື່ສິນຄ້າ (ລາວ)">
             <input
               className={inputClass}
               value={form.nameLo}
@@ -186,34 +254,34 @@ export default function ProductsPage() {
               required
             />
           </FormField>
-          <FormField label="ชื่อสินค้า (จีน)">
+          <FormField label="ຊື່ສິນຄ້າ (ຈີນ)">
             <input
               className={inputClass}
               value={form.nameCn}
               onChange={(e) => setForm({ ...form, nameCn: e.target.value })}
             />
           </FormField>
-          <FormField label="รุ่น/Model">
+          <FormField label="ຮຸ່ນ/Model">
             <input
               className={inputClass}
               value={form.modelNo}
               onChange={(e) => setForm({ ...form, modelNo: e.target.value })}
             />
           </FormField>
-          <FormField label="ขนาด">
+          <FormField label="ຂະໜາດ">
             <input
               className={inputClass}
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
             />
           </FormField>
-          <FormField label="หมวดหมู่">
+          <FormField label="ໝວດໝູ່">
             <select
               className={selectClass}
               value={form.categoryId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
-              <option value="">-- ไม่ระบุ --</option>
+              <option value="">-- ບໍ່ລະບຸ --</option>
               {categories?.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name_lo}
@@ -221,7 +289,7 @@ export default function ProductsPage() {
               ))}
             </select>
           </FormField>
-          <FormField label="หน่วย">
+          <FormField label="ໜ່ວຍ">
             <input
               className={inputClass}
               value={form.unitLo}
@@ -229,7 +297,7 @@ export default function ProductsPage() {
               required
             />
           </FormField>
-          <FormField label="จุดสั่งซื้อขั้นต่ำ (Reorder point)">
+          <FormField label="ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ (Reorder point)">
             <input
               type="number"
               step="0.01"
@@ -246,10 +314,10 @@ export default function ProductsPage() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

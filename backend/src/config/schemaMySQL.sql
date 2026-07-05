@@ -119,9 +119,9 @@ CREATE TABLE currencies (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO currencies (code, name, symbol) VALUES
-    ('LAK', 'กีบลาว', '₭'),
-    ('THB', 'บาทไทย', '฿'),
-    ('CNY', 'หยวนจีน', '¥');
+    ('LAK', 'ກີບລາວ', '₭'),
+    ('THB', 'ບາດໄທ', '฿'),
+    ('CNY', 'ຢວນຈີນ', '¥');
 
 CREATE TABLE exchange_rates (
     id              INT AUTO_INCREMENT PRIMARY KEY,
@@ -412,24 +412,24 @@ CREATE TABLE stock_take_items (
 -- ---------------------------------------------------------------------
 
 INSERT INTO warehouse_types (code, name) VALUES
-    ('HR', 'คลัง HR'),
-    ('FOOD', 'คลังโรงอาหาร'),
-    ('SPARE_PARTS', 'คลังอะไหล่เครื่องจักร');
+    ('HR', 'ຄັງ HR'),
+    ('FOOD', 'ຄັງໂຮງອາຫານ'),
+    ('SPARE_PARTS', 'ຄັງອະໄຫຼ່ເຄື່ອງຈັກ');
 
 INSERT INTO branches (name, branch_type) VALUES
-    ('สำนักงานใหญ่', 'HEAD_OFFICE'),
-    ('โรงงาน 1', 'FACTORY'),
-    ('โรงงาน 2', 'FACTORY');
+    ('ສຳນັກງານໃຫຍ່', 'HEAD_OFFICE'),
+    ('ໂຮງງານ 1', 'FACTORY'),
+    ('ໂຮງງານ 2', 'FACTORY');
 
 -- คลังที่ HQ (is_central = TRUE ทุกประเภท เพราะ HQ เป็นจุดรับเข้าเดียว)
 INSERT INTO warehouses (branch_id, warehouse_type_id, name, is_central)
-SELECT b.id, wt.id, CONCAT('คลัง ', wt.name, ' - สำนักงานใหญ่'), TRUE
+SELECT b.id, wt.id, CONCAT('ຄັງ ', wt.name, ' - ສຳນັກງານໃຫຍ່'), TRUE
 FROM branches b, warehouse_types wt
-WHERE b.name = 'สำนักงานใหญ่';
+WHERE b.name = 'ສຳນັກງານໃຫຍ່';
 
 -- คลังที่โรงงาน 1 และ 2 (is_central = FALSE)
 INSERT INTO warehouses (branch_id, warehouse_type_id, name, is_central)
-SELECT b.id, wt.id, CONCAT('คลัง ', wt.name, ' - ', b.name), FALSE
+SELECT b.id, wt.id, CONCAT('ຄັງ ', wt.name, ' - ', b.name), FALSE
 FROM branches b, warehouse_types wt
 WHERE b.branch_type = 'FACTORY';
 

@@ -4,7 +4,7 @@ const AppError = require('./AppError');
 // table เป็น literal string ที่กำหนดจากโค้ดเราเองเสมอ ไม่เคยมาจาก user input จึงไม่เสี่ยง SQL injection
 async function partialUpdate(runner, table, id, columns) {
   const entries = Object.entries(columns).filter(([, v]) => v !== undefined);
-  if (!entries.length) throw new AppError(400, 'ไม่มีข้อมูลให้อัปเดต');
+  if (!entries.length) throw new AppError(400, 'ບໍ່ມີຂໍ້ມູນໃຫ້ອັບເດດ');
 
   const setClause = entries.map(([col]) => `${col} = ?`).join(', ');
   const values = entries.map(([, v]) => v);

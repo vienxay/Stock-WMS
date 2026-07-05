@@ -41,7 +41,7 @@ const updateGroup = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM groups_ WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบกลุ่มสินค้านี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບກຸ່ມສິນຄ້ານີ້");
   res.json(rows[0]);
 });
 
@@ -95,7 +95,7 @@ const updateCategory = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM categories WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบหมวดหมู่นี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບໝວດໝູ່ນີ້");
   res.json(rows[0]);
 });
 
@@ -142,7 +142,7 @@ const updateUsageArea = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM usage_areas WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบพื้นที่ใช้งานนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບພື້ນທີ່ໃຊ້ງານນີ້");
   res.json(rows[0]);
 });
 

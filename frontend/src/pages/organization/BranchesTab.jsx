@@ -38,7 +38,7 @@ export default function BranchesTab() {
   const createMutation = useMutation({
     mutationFn: createBranch,
     onSuccess: () => {
-      toastSuccess("เพิ่มสาขาแล้ว");
+      toastSuccess("ເພີ່ມສາຂາແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -48,7 +48,7 @@ export default function BranchesTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateBranch(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -83,36 +83,36 @@ export default function BranchesTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={openCreate}>+ เพิ่มสาขา</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມສາຂາ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อสาขา</th>
-            <th className="px-4 py-2">ประเภท</th>
-            <th className="px-4 py-2">ที่อยู่</th>
-            <th className="px-4 py-2">สถานะ</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ຊື່ສາຂາ</th>
+            <th className="px-4 py-3">ປະເພດ</th>
+            <th className="px-4 py-3">ທີ່ຢູ່</th>
+            <th className="px-4 py-3">ສະຖານະ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((b) => (
             <tr key={b.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">{b.name}</td>
-              <td className="px-4 py-2">
-                {b.branch_type === "HEAD_OFFICE" ? "สำนักงานใหญ่" : "โรงงาน"}
+              <td className="px-4 py-3 font-medium text-gray-800">{b.name}</td>
+              <td className="px-4 py-3">
+                {b.branch_type === "HEAD_OFFICE" ? "ສຳນັກງານໃຫຍ່" : "ໂຮງງານ"}
               </td>
-              <td className="px-4 py-2 text-gray-500">{b.address || "-"}</td>
-              <td className="px-4 py-2">
-                {b.is_active ? "ใช้งาน" : "ปิดใช้งาน"}
+              <td className="px-4 py-3 text-gray-500">{b.address || "-"}</td>
+              <td className="px-4 py-3">
+                {b.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(b)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -122,11 +122,11 @@ export default function BranchesTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขสาขา" : "เพิ่มสาขา"}
+        title={editingId ? "ແກ້ໄຂສາຂາ" : "ເພີ່ມສາຂາ"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="ชื่อสาขา">
+          <FormField label="ຊື່ສາຂາ">
             <input
               className={inputClass}
               value={form.name}
@@ -134,17 +134,17 @@ export default function BranchesTab() {
               required
             />
           </FormField>
-          <FormField label="ประเภท">
+          <FormField label="ປະເພດ">
             <select
               className={selectClass}
               value={form.branchType}
               onChange={(e) => setForm({ ...form, branchType: e.target.value })}
             >
-              <option value="HEAD_OFFICE">สำนักงานใหญ่</option>
-              <option value="FACTORY">โรงงาน</option>
+              <option value="HEAD_OFFICE">ສຳນັກງານໃຫຍ່</option>
+              <option value="FACTORY">ໂຮງງານ</option>
             </select>
           </FormField>
-          <FormField label="ที่อยู่">
+          <FormField label="ທີ່ຢູ່">
             <textarea
               className={inputClass}
               value={form.address}
@@ -157,7 +157,7 @@ export default function BranchesTab() {
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
             />
-            ใช้งานอยู่
+            ກຳລັງໃຊ້ງານ
           </label>
           <div className="flex justify-end gap-2">
             <Button
@@ -165,13 +165,13 @@ export default function BranchesTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

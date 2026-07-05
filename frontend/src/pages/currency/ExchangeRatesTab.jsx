@@ -29,7 +29,7 @@ export default function ExchangeRatesTab() {
   const createMutation = useMutation({
     mutationFn: createExchangeRate,
     onSuccess: () => {
-      toastSuccess("บันทึกอัตราแลกเปลี่ยนแล้ว");
+      toastSuccess("ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["exchange-rates"] });
       setModalOpen(false);
       setForm(EMPTY_FORM);
@@ -48,28 +48,28 @@ export default function ExchangeRatesTab() {
     <div>
       <div className="flex justify-end mb-3">
         <Button onClick={() => setModalOpen(true)}>
-          + ตั้งอัตราแลกเปลี่ยน
+          + ຕັ້ງອັດຕາແລກປ່ຽນ
         </Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">สกุลเงิน</th>
-            <th className="px-4 py-2">อัตรา (1 หน่วย = กี่ LAK)</th>
-            <th className="px-4 py-2">มีผลตั้งแต่วันที่</th>
+            <th className="px-4 py-3">ສະກຸນເງິນ</th>
+            <th className="px-4 py-3">ອັດຕາ (1 ໜ່ວຍ = ເທົ່າໃດ LAK)</th>
+            <th className="px-4 py-3">ມີຜົນຕັ້ງແຕ່ວັນທີ</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((r) => (
             <tr key={r.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {r.currency_code}
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">
                 {Number(r.rate_to_base).toLocaleString()}
               </td>
-              <td className="px-4 py-2">{r.effective_date?.slice(0, 10)}</td>
+              <td className="px-4 py-3">{r.effective_date?.slice(0, 10)}</td>
             </tr>
           ))}
         </tbody>
@@ -77,11 +77,11 @@ export default function ExchangeRatesTab() {
 
       <Modal
         open={modalOpen}
-        title="ตั้งอัตราแลกเปลี่ยน"
+        title="ຕັ້ງອັດຕາແລກປ່ຽນ"
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="สกุลเงิน">
+          <FormField label="ສະກຸນເງິນ">
             <select
               className={selectClass}
               value={form.currencyCode}
@@ -89,11 +89,11 @@ export default function ExchangeRatesTab() {
                 setForm({ ...form, currencyCode: e.target.value })
               }
             >
-              <option value="THB">THB — บาทไทย</option>
-              <option value="CNY">CNY — หยวนจีน</option>
+              <option value="THB">THB — ບາດໄທ</option>
+              <option value="CNY">CNY — ຢວນຈີນ</option>
             </select>
           </FormField>
-          <FormField label="อัตรา (1 หน่วย = กี่ LAK)">
+          <FormField label="ອັດຕາ (1 ໜ່ວຍ = ເທົ່າໃດ LAK)">
             <input
               type="number"
               step="0.000001"
@@ -103,7 +103,7 @@ export default function ExchangeRatesTab() {
               required
             />
           </FormField>
-          <FormField label="มีผลตั้งแต่วันที่">
+          <FormField label="ມີຜົນຕັ້ງແຕ່ວັນທີ">
             <input
               type="date"
               className={inputClass}
@@ -120,10 +120,10 @@ export default function ExchangeRatesTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

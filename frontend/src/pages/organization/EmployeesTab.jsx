@@ -50,7 +50,7 @@ export default function EmployeesTab() {
   const createMutation = useMutation({
     mutationFn: createEmployee,
     onSuccess: () => {
-      toastSuccess("เพิ่มพนักงานแล้ว");
+      toastSuccess("ເພີ່ມພະນັກງານແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -60,7 +60,7 @@ export default function EmployeesTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateEmployee(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -101,38 +101,38 @@ export default function EmployeesTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={openCreate}>+ เพิ่มพนักงาน</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມພະນັກງານ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">รหัสพนักงาน</th>
-            <th className="px-4 py-2">ชื่อ-สกุล</th>
-            <th className="px-4 py-2">แผนก</th>
-            <th className="px-4 py-2">สาขา</th>
-            <th className="px-4 py-2">สถานะ</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ລະຫັດພະນັກງານ</th>
+            <th className="px-4 py-3">ຊື່-ນາມສະກຸນ</th>
+            <th className="px-4 py-3">ພະແນກ</th>
+            <th className="px-4 py-3">ສາຂາ</th>
+            <th className="px-4 py-3">ສະຖານະ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((e) => (
             <tr key={e.id}>
-              <td className="px-4 py-2">{e.employee_code}</td>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3">{e.employee_code}</td>
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {e.full_name}
               </td>
-              <td className="px-4 py-2">{e.department_name || "-"}</td>
-              <td className="px-4 py-2">{e.branch_name}</td>
-              <td className="px-4 py-2">
-                {e.is_active ? "ใช้งาน" : "ปิดใช้งาน"}
+              <td className="px-4 py-3">{e.department_name || "-"}</td>
+              <td className="px-4 py-3">{e.branch_name}</td>
+              <td className="px-4 py-3">
+                {e.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(e)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -142,11 +142,11 @@ export default function EmployeesTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขพนักงาน" : "เพิ่มพนักงาน"}
+        title={editingId ? "ແກ້ໄຂພະນັກງານ" : "ເພີ່ມພະນັກງານ"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="รหัสพนักงาน">
+          <FormField label="ລະຫັດພະນັກງານ">
             <input
               className={inputClass}
               value={form.employeeCode}
@@ -156,7 +156,7 @@ export default function EmployeesTab() {
               required
             />
           </FormField>
-          <FormField label="ชื่อ-สกุล">
+          <FormField label="ຊື່-ນາມສະກຸນ">
             <input
               className={inputClass}
               value={form.fullName}
@@ -164,14 +164,14 @@ export default function EmployeesTab() {
               required
             />
           </FormField>
-          <FormField label="สาขา">
+          <FormField label="ສາຂາ">
             <select
               className={selectClass}
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
               required
             >
-              <option value="">-- เลือกสาขา --</option>
+              <option value="">-- ເລືອກສາຂາ --</option>
               {branches?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -179,7 +179,7 @@ export default function EmployeesTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="แผนก (ถ้ามี)">
+          <FormField label="ພະແນກ (ຖ້າມີ)">
             <select
               className={selectClass}
               value={form.departmentId}
@@ -187,7 +187,7 @@ export default function EmployeesTab() {
                 setForm({ ...form, departmentId: e.target.value })
               }
             >
-              <option value="">-- ไม่ระบุ --</option>
+              <option value="">-- ບໍ່ລະບຸ --</option>
               {departments
                 ?.filter(
                   (d) =>
@@ -206,7 +206,7 @@ export default function EmployeesTab() {
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
             />
-            ใช้งานอยู่
+            ກຳລັງໃຊ້ງານ
           </label>
           <div className="flex justify-end gap-2">
             <Button
@@ -214,13 +214,13 @@ export default function EmployeesTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

@@ -6,18 +6,18 @@ import UsageAreasTab from "./catalog/UsageAreasTab";
 export default function CatalogPage() {
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-800 mb-4">หมวดหมู่สินค้า</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">ໝວດໝູ່ສິນຄ້າ</h2>
       <Tabs
         tabs={[
-          { key: "groups", label: "กลุ่มสินค้า", component: <GroupsTab /> },
+          { key: "groups", label: "ກຸ່ມສິນຄ້າ", component: <GroupsTab /> },
           {
             key: "categories",
-            label: "หมวดหมู่",
+            label: "ໝວດໝູ່",
             component: <CategoriesTab />,
           },
           {
             key: "usage-areas",
-            label: "พื้นที่ใช้งาน",
+            label: "ພື້ນທີ່ໃຊ້ງານ",
             component: <UsageAreasTab />,
           },
         ]}

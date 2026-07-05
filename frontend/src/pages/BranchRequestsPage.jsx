@@ -7,10 +7,12 @@ import { listProducts } from "../api/products";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
+import { ArrowLeftRight } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
 import StatusBadge from "../components/ui/StatusBadge";
+import ItemRowsEditor from "../components/ui/ItemRowsEditor";
 import FormField, { inputClass, selectClass } from "../components/ui/FormField";
 
 const EMPTY_ITEM = { productId: "", quantityRequested: "" };
@@ -51,7 +53,7 @@ export default function BranchRequestsPage() {
   const createMutation = useMutation({
     mutationFn: createBranchRequest,
     onSuccess: (request) => {
-      toastSuccess("สร้างคำขอเบิกแล้ว");
+      toastSuccess("ສ້າງຄຳຂໍເບີກແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["branch-requests"] });
       setModalOpen(false);
       setForm(EMPTY_FORM);
@@ -87,9 +89,9 @@ export default function BranchRequestsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">คำขอเบิกระหว่างคลัง</h2>
+        <h2 className="text-xl font-bold text-gray-800">ຄຳຂໍເບີກລະຫວ່າງຄັງ</h2>
         {canCreate && (
-          <Button onClick={() => setModalOpen(true)}>+ สร้างคำขอเบิก</Button>
+          <Button onClick={() => setModalOpen(true)}>+ ສ້າງຄຳຂໍເບີກ</Button>
         )}
       </div>
 
@@ -98,7 +100,7 @@ export default function BranchRequestsPage() {
         value={status}
         onChange={(e) => setStatus(e.target.value)}
       >
-        <option value="">-- ทุกสถานะ --</option>
+        <option value="">-- ທຸກສະຖານະ --</option>
         {STATUS_OPTIONS.map((s) => (
           <option key={s} value={s}>
             {s}
@@ -109,36 +111,36 @@ export default function BranchRequestsPage() {
       {isLoading ? (
         <Spinner />
       ) : (
-        <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-          <thead className="bg-gray-50 text-gray-500 text-left">
+        <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+          <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              <th className="px-4 py-2">เลขที่</th>
-              <th className="px-4 py-2">จากคลัง (HQ)</th>
-              <th className="px-4 py-2">ไปคลัง (สาขา)</th>
-              <th className="px-4 py-2">สถานะ</th>
-              <th className="px-4 py-2">วันที่ขอ</th>
+              <th className="px-4 py-3">ເລກທີ</th>
+              <th className="px-4 py-3">ຈາກຄັງ (HQ)</th>
+              <th className="px-4 py-3">ໄປຄັງ (ສາຂາ)</th>
+              <th className="px-4 py-3">ສະຖານະ</th>
+              <th className="px-4 py-3">ວັນທີຂໍ</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-100">
             {data?.map((r) => (
               <tr
                 key={r.id}
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => navigate(`/branch-requests/${r.id}`)}
               >
-                <td className="px-4 py-2 font-medium text-gray-800">#{r.id}</td>
-                <td className="px-4 py-2">{r.from_warehouse_name}</td>
-                <td className="px-4 py-2">{r.to_warehouse_name}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3 font-medium text-gray-800">#{r.id}</td>
+                <td className="px-4 py-3">{r.from_warehouse_name}</td>
+                <td className="px-4 py-3">{r.to_warehouse_name}</td>
+                <td className="px-4 py-3">
                   <StatusBadge status={r.status} />
                 </td>
-                <td className="px-4 py-2">{r.requested_at?.slice(0, 10)}</td>
+                <td className="px-4 py-3">{r.requested_at?.slice(0, 10)}</td>
               </tr>
             ))}
             {!data?.length && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                  ไม่พบคำขอเบิก
+                  ບໍ່ພົບຄຳຂໍເບີກ
                 </td>
               </tr>
             )}
@@ -148,13 +150,14 @@ export default function BranchRequestsPage() {
 
       <Modal
         open={modalOpen}
-        title="สร้างคำขอเบิกระหว่างคลัง"
+        title="ສ້າງຄຳຂໍເບີກລະຫວ່າງຄັງ"
+        icon={ArrowLeftRight}
         onClose={() => setModalOpen(false)}
         wide
       >
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormField label="จากคลัง (HQ)">
+            <FormField label="ຈາກຄັງ (HQ)">
               <select
                 className={selectClass}
                 value={form.fromWarehouseId}
@@ -163,7 +166,7 @@ export default function BranchRequestsPage() {
                 }
                 required
               >
-                <option value="">-- เลือกคลังส่วนกลาง --</option>
+                <option value="">-- ເລືອກຄັງສ່ວນກາງ --</option>
                 {centralWarehouses?.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
@@ -171,7 +174,7 @@ export default function BranchRequestsPage() {
                 ))}
               </select>
             </FormField>
-            <FormField label="ไปคลัง (สาขา)">
+            <FormField label="ໄປຄັງ (ສາຂາ)">
               <select
                 className={selectClass}
                 value={form.toWarehouseId}
@@ -180,7 +183,7 @@ export default function BranchRequestsPage() {
                 }
                 required
               >
-                <option value="">-- เลือกคลังสาขา --</option>
+                <option value="">-- ເລືອກຄັງສາຂາ --</option>
                 {branchWarehouses?.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
@@ -189,7 +192,7 @@ export default function BranchRequestsPage() {
               </select>
             </FormField>
           </div>
-          <FormField label="หมายเหตุ">
+          <FormField label="ໝາຍເຫດ">
             <input
               className={inputClass}
               value={form.note}
@@ -198,66 +201,28 @@ export default function BranchRequestsPage() {
           </FormField>
 
           <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm text-gray-700">
-                รายการสินค้าที่ขอเบิก
-              </h4>
-              <Button type="button" variant="secondary" onClick={addItem}>
-                + เพิ่มรายการ
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {form.items.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                  <select
-                    className={`${selectClass} col-span-8`}
-                    value={item.productId}
-                    onChange={(e) =>
-                      updateItem(idx, { productId: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">-- เลือกสินค้า --</option>
-                    {products?.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.sku} — {p.name_lo}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className={`${inputClass} col-span-3`}
-                    placeholder="จำนวนที่ขอ"
-                    value={item.quantityRequested}
-                    onChange={(e) =>
-                      updateItem(idx, { quantityRequested: e.target.value })
-                    }
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    className="col-span-1 text-red-500 hover:text-red-700"
-                    disabled={form.items.length === 1}
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
-            </div>
+            <ItemRowsEditor
+              title="ລາຍການສິນຄ້າທີ່ຂໍເບີກ"
+              items={form.items}
+              products={products}
+              onUpdate={updateItem}
+              onAdd={addItem}
+              onRemove={removeItem}
+              quantityField="quantityRequested"
+              quantityLabel="ຈຳນວນທີ່ຂໍ"
+            />
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-100">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              ส่งคำขอ
+              ສົ່ງຄຳຂໍ
             </Button>
           </div>
         </form>

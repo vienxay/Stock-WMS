@@ -7,7 +7,7 @@ const AppError = require("../utils/AppError");
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
-    return next(new AppError(401, "ไม่ได้ระบุ token"));
+    return next(new AppError(401, "ບໍ່ໄດ້ລະບຸ token"));
   }
 
   const token = header.slice("Bearer ".length);
@@ -17,7 +17,7 @@ function authMiddleware(req, res, next) {
     req.user = payload;
     next();
   } catch (err) {
-    next(new AppError(401, "token ไม่ถูกต้องหรือหมดอายุ"));
+    next(new AppError(401, "token ບໍ່ຖືກຕ້ອງ ຫຼືໝົດອາຍຸ"));
   }
 }
 

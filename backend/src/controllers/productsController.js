@@ -24,7 +24,7 @@ const productSchema = z.object({
 
 async function findProductOr404(id) {
   const [rows] = await pool.query("SELECT * FROM products WHERE id = ?", [id]);
-  if (!rows.length) throw new AppError(404, "ไม่พบสินค้านี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບສິນຄ້ານີ້");
   return rows[0];
 }
 
@@ -146,7 +146,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 
 const addProductImage = asyncHandler(async (req, res) => {
   await findProductOr404(req.params.id);
-  if (!req.file) throw new AppError(400, "ไม่มีไฟล์ภาพแนบมา");
+  if (!req.file) throw new AppError(400, "ບໍ່ມີໄຟລ໌ຮູບແນບມາ");
 
   const imageUrl = `/uploads/products/${req.file.filename}`;
   const isPrimary =
@@ -168,7 +168,7 @@ const setPrimaryProductImage = asyncHandler(async (req, res) => {
     "UPDATE product_images SET is_primary = TRUE WHERE id = ? AND product_id = ?",
     [req.params.imageId, req.params.id],
   );
-  if (!result.affectedRows) throw new AppError(404, "ไม่พบรูปภาพนี้");
+  if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບຮູບພາບນີ້");
   res.status(204).send();
 });
 
@@ -178,7 +178,7 @@ const deleteProductImage = asyncHandler(async (req, res) => {
     [req.params.imageId, req.params.id],
   );
   const image = rows[0];
-  if (!image) throw new AppError(404, "ไม่พบรูปภาพนี้");
+  if (!image) throw new AppError(404, "ບໍ່ພົບຮູບພາບນີ້");
 
   await pool.query("DELETE FROM product_images WHERE id = ?", [image.id]);
 
@@ -193,12 +193,22 @@ const deleteProductImage = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
+// ลบสินค้าได้เฉพาะที่ยังไม่เคยมีประวัติเคลื่อนไหวสต็อกเลย
+// ถ้าเคยรับเข้า/เบิกจ่าย/โอน/ตรวจนับไปแล้ว foreign key constraint จะกันไว้เอง
+// (แปลงเป็น 409 ให้อัตโนมัติที่ errorMiddleware) เพื่อไม่ให้ audit trail ขาดหาย
+const deleteProduct = asyncHandler(async (req, res) => {
+  await findProductOr404(req.params.id);
+  await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
+  res.status(204).send();
+});
+
 module.exports = {
   listProducts,
   getProduct,
   getProductStock,
   createProduct,
   updateProduct,
+  deleteProduct,
   addProductImage,
   setPrimaryProductImage,
   deleteProductImage,

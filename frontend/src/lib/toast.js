@@ -15,8 +15,8 @@ export const confirmAction = (options) =>
   Swal.fire({
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "ยืนยัน",
-    cancelButtonText: "ยกเลิก",
+    confirmButtonText: "ຢືນຢັນ",
+    cancelButtonText: "ຍົກເລີກ",
     confirmButtonColor: "#dc2626",
     ...options,
   });

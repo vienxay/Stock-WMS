@@ -135,7 +135,7 @@ const getMovementsReport = asyncHandler(async (req, res) => {
 const getPeriodSummary = asyncHandler(async (req, res) => {
   const { warehouseId, year, productId } = req.query;
   if (!warehouseId || !year) {
-    throw new AppError(400, "ต้องระบุ warehouseId และ year");
+    throw new AppError(400, "ຕ້ອງລະບຸ warehouseId ແລະ year");
   }
 
   const conditions = ["warehouse_id = ?", "period BETWEEN ? AND ?"];
@@ -164,7 +164,7 @@ const getPeriodSummary = asyncHandler(async (req, res) => {
 const getYearlySummary = asyncHandler(async (req, res) => {
   const { warehouseId, year, format } = req.query;
   if (!warehouseId || !year) {
-    throw new AppError(400, "ต้องระบุ warehouseId และ year");
+    throw new AppError(400, "ຕ້ອງລະບຸ warehouseId ແລະ year");
   }
 
   const [rows] = await pool.query(

@@ -44,7 +44,7 @@ const updateBranch = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM branches WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบสาขานี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບສາຂານີ້");
   res.json(rows[0]);
 });
 
@@ -132,7 +132,7 @@ const updateWarehouse = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM warehouses WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบคลังนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບຄັງນີ້");
   res.json(rows[0]);
 });
 
@@ -261,7 +261,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM employees WHERE id = ?", [
     req.params.id,
   ]);
-  if (!rows.length) throw new AppError(404, "ไม่พบพนักงานนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບພະນັກງານນີ້");
   res.json(rows[0]);
 });
 
@@ -319,7 +319,7 @@ const updateUser = asyncHandler(async (req, res) => {
     "SELECT id, employee_id, username, is_active, created_at FROM users WHERE id = ?",
     [req.params.id],
   );
-  if (!rows.length) throw new AppError(404, "ไม่พบผู้ใช้นี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບຜູ້ໃຊ້ນີ້");
   res.json(rows[0]);
 });
 
@@ -369,7 +369,7 @@ const assignUserRole = asyncHandler(async (req, res) => {
     [body.userId, body.roleId, warehouseId],
   );
   if (existing.length) {
-    throw new AppError(409, "ผู้ใช้นี้มีสิทธิ์นี้อยู่แล้ว");
+    throw new AppError(409, "ຜູ້ໃຊ້ນີ້ມີສິດທິນີ້ຢູ່ແລ້ວ");
   }
 
   const [result] = await pool.query(
@@ -386,7 +386,7 @@ const revokeUserRole = asyncHandler(async (req, res) => {
   const [result] = await pool.query("DELETE FROM user_roles WHERE id = ?", [
     req.params.id,
   ]);
-  if (!result.affectedRows) throw new AppError(404, "ไม่พบสิทธิ์นี้");
+  if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບສິດທິນີ້");
   res.status(204).send();
 });
 

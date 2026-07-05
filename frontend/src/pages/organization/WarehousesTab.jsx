@@ -55,7 +55,7 @@ export default function WarehousesTab() {
   const createMutation = useMutation({
     mutationFn: createWarehouse,
     onSuccess: () => {
-      toastSuccess("เพิ่มคลังแล้ว");
+      toastSuccess("ເພີ່ມຄັງແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -65,7 +65,7 @@ export default function WarehousesTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateWarehouse(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -75,7 +75,7 @@ export default function WarehousesTab() {
   const createTypeMutation = useMutation({
     mutationFn: createWarehouseType,
     onSuccess: () => {
-      toastSuccess("เพิ่มประเภทคลังแล้ว");
+      toastSuccess("ເພີ່ມປະເພດຄັງແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["warehouse-types"] });
       setTypeModalOpen(false);
       setTypeForm(EMPTY_TYPE_FORM);
@@ -118,38 +118,38 @@ export default function WarehousesTab() {
     <div>
       <div className="flex justify-end gap-2 mb-3">
         <Button variant="secondary" onClick={() => setTypeModalOpen(true)}>
-          + ประเภทคลัง
+          + ປະເພດຄັງ
         </Button>
-        <Button onClick={openCreate}>+ เพิ่มคลัง</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມຄັງ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อคลัง</th>
-            <th className="px-4 py-2">สาขา</th>
-            <th className="px-4 py-2">ประเภท</th>
-            <th className="px-4 py-2">ส่วนกลาง</th>
-            <th className="px-4 py-2">สถานะ</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ຊື່ຄັງ</th>
+            <th className="px-4 py-3">ສາຂາ</th>
+            <th className="px-4 py-3">ປະເພດ</th>
+            <th className="px-4 py-3">ສ່ວນກາງ</th>
+            <th className="px-4 py-3">ສະຖານະ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((w) => (
             <tr key={w.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">{w.name}</td>
-              <td className="px-4 py-2">{w.branch_name}</td>
-              <td className="px-4 py-2">{w.warehouse_type_name}</td>
-              <td className="px-4 py-2">{w.is_central ? "ใช่ (HQ)" : "-"}</td>
-              <td className="px-4 py-2">
-                {w.is_active ? "ใช้งาน" : "ปิดใช้งาน"}
+              <td className="px-4 py-3 font-medium text-gray-800">{w.name}</td>
+              <td className="px-4 py-3">{w.branch_name}</td>
+              <td className="px-4 py-3">{w.warehouse_type_name}</td>
+              <td className="px-4 py-3">{w.is_central ? "ແມ່ນ (HQ)" : "-"}</td>
+              <td className="px-4 py-3">
+                {w.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(w)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -159,18 +159,18 @@ export default function WarehousesTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขคลัง" : "เพิ่มคลัง"}
+        title={editingId ? "ແກ້ໄຂຄັງ" : "ເພີ່ມຄັງ"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="สาขา">
+          <FormField label="ສາຂາ">
             <select
               className={selectClass}
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
               required
             >
-              <option value="">-- เลือกสาขา --</option>
+              <option value="">-- ເລືອກສາຂາ --</option>
               {branches?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -178,7 +178,7 @@ export default function WarehousesTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="ประเภทคลัง">
+          <FormField label="ປະເພດຄັງ">
             <select
               className={selectClass}
               value={form.warehouseTypeId}
@@ -187,7 +187,7 @@ export default function WarehousesTab() {
               }
               required
             >
-              <option value="">-- เลือกประเภท --</option>
+              <option value="">-- ເລືອກປະເພດ --</option>
               {warehouseTypes?.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -195,7 +195,7 @@ export default function WarehousesTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="ชื่อคลัง">
+          <FormField label="ຊື່ຄັງ">
             <input
               className={inputClass}
               value={form.name}
@@ -211,7 +211,7 @@ export default function WarehousesTab() {
                 setForm({ ...form, isCentral: e.target.checked })
               }
             />
-            เป็นคลังส่วนกลาง (HQ) — รับสินค้าเข้าได้
+            ເປັນຄັງສ່ວນກາງ (HQ) — ຮັບສິນຄ້າເຂົ້າໄດ້
           </label>
           <label className="flex items-center gap-2 text-sm mb-4">
             <input
@@ -219,7 +219,7 @@ export default function WarehousesTab() {
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
             />
-            ใช้งานอยู่
+            ກຳລັງໃຊ້ງານ
           </label>
           <div className="flex justify-end gap-2">
             <Button
@@ -227,13 +227,13 @@ export default function WarehousesTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>
@@ -241,7 +241,7 @@ export default function WarehousesTab() {
 
       <Modal
         open={typeModalOpen}
-        title="เพิ่มประเภทคลัง"
+        title="ເພີ່ມປະເພດຄັງ"
         onClose={() => setTypeModalOpen(false)}
       >
         <form
@@ -250,7 +250,7 @@ export default function WarehousesTab() {
             createTypeMutation.mutate(typeForm);
           }}
         >
-          <FormField label="รหัสประเภท (เช่น HR, FOOD)">
+          <FormField label="ລະຫັດປະເພດ (ຕົວຢ່າງ: HR, FOOD)">
             <input
               className={inputClass}
               value={typeForm.code}
@@ -260,7 +260,7 @@ export default function WarehousesTab() {
               required
             />
           </FormField>
-          <FormField label="ชื่อประเภทคลัง">
+          <FormField label="ຊື່ປະເພດຄັງ">
             <input
               className={inputClass}
               value={typeForm.name}
@@ -276,10 +276,10 @@ export default function WarehousesTab() {
               variant="secondary"
               onClick={() => setTypeModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createTypeMutation.isPending}>
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

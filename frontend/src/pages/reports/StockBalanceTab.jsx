@@ -35,7 +35,7 @@ export default function StockBalanceTab() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-3">
           <select className={`${selectClass} max-w-xs`} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
-            <option value="">-- ทุกคลัง --</option>
+            <option value="">-- ທຸກຄັງ --</option>
             {warehouses?.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name}
@@ -43,7 +43,7 @@ export default function StockBalanceTab() {
             ))}
           </select>
           <select className={`${selectClass} max-w-xs`} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-            <option value="">-- ทุกหมวดหมู่ --</option>
+            <option value="">-- ທຸກໝວດໝູ່ --</option>
             {categories?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name_lo}
@@ -52,41 +52,41 @@ export default function StockBalanceTab() {
           </select>
         </div>
         <Button variant="secondary" onClick={handleExport}>
-          ดาวน์โหลด Excel
+          ດາວໂຫລດ Excel
         </Button>
       </div>
 
       {isLoading ? (
         <Spinner />
       ) : (
-        <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-          <thead className="bg-gray-50 text-gray-500 text-left">
+        <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+          <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              <th className="px-4 py-2">SKU</th>
-              <th className="px-4 py-2">สินค้า</th>
-              <th className="px-4 py-2">คลัง</th>
-              <th className="px-4 py-2">จำนวนคงเหลือ</th>
-              <th className="px-4 py-2">ต้นทุนเฉลี่ย/หน่วย</th>
-              <th className="px-4 py-2">มูลค่ารวม (LAK)</th>
+              <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">ສິນຄ້າ</th>
+              <th className="px-4 py-3">ຄັງ</th>
+              <th className="px-4 py-3">ຈຳນວນຄົງເຫຼືອ</th>
+              <th className="px-4 py-3">ຕົ້ນທຶນສະເລ່ຍ/ໜ່ວຍ</th>
+              <th className="px-4 py-3">ມູນຄ່າລວມ (LAK)</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-100">
             {data?.map((r, idx) => (
               <tr key={idx}>
-                <td className="px-4 py-2">{r.sku}</td>
-                <td className="px-4 py-2 font-medium text-gray-800">{r.product_name}</td>
-                <td className="px-4 py-2">{r.warehouse_name}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">{r.sku}</td>
+                <td className="px-4 py-3 font-medium text-gray-800">{r.product_name}</td>
+                <td className="px-4 py-3">{r.warehouse_name}</td>
+                <td className="px-4 py-3">
                   {r.quantity} {r.unit_lo}
                 </td>
-                <td className="px-4 py-2">{Number(r.avg_unit_value_lak).toLocaleString()}</td>
-                <td className="px-4 py-2">{Number(r.total_value_lak).toLocaleString()}</td>
+                <td className="px-4 py-3">{Number(r.avg_unit_value_lak).toLocaleString()}</td>
+                <td className="px-4 py-3">{Number(r.total_value_lak).toLocaleString()}</td>
               </tr>
             ))}
             {!data?.length && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  ไม่พบข้อมูล
+                  ບໍ່ພົບຂໍ້ມູນ
                 </td>
               </tr>
             )}
@@ -94,10 +94,10 @@ export default function StockBalanceTab() {
           {!!data?.length && (
             <tfoot>
               <tr className="border-t font-semibold">
-                <td colSpan={5} className="px-4 py-2 text-right">
-                  รวมมูลค่า (LAK)
+                <td colSpan={5} className="px-4 py-3 text-right">
+                  ລວມມູນຄ່າ (LAK)
                 </td>
-                <td className="px-4 py-2">{totalValue.toLocaleString()}</td>
+                <td className="px-4 py-3">{totalValue.toLocaleString()}</td>
               </tr>
             </tfoot>
           )}

@@ -34,7 +34,7 @@ export default function YearlySummaryTab() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-3">
           <select className={`${selectClass} max-w-xs`} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
-            <option value="">-- เลือกคลัง --</option>
+            <option value="">-- ເລືອກຄັງ --</option>
             {warehouses?.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name}
@@ -49,52 +49,52 @@ export default function YearlySummaryTab() {
           />
         </div>
         <Button variant="secondary" onClick={handleExport} disabled={!warehouseId}>
-          ดาวน์โหลด Excel
+          ດາວໂຫລດ Excel
         </Button>
       </div>
 
       {!warehouseId ? (
-        <div className="text-gray-400 text-center py-10">กรุณาเลือกคลังเพื่อดูสรุปรายปี</div>
+        <div className="text-gray-400 text-center py-10">ກະລຸນາເລືອກຄັງເພື່ອເບິ່ງສະຫຼຸບລາຍປີ</div>
       ) : isLoading ? (
         <Spinner />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-            <thead className="bg-gray-50 text-gray-500 text-left">
+          <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+            <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
               <tr>
-                <th className="px-3 py-2">SKU</th>
-                <th className="px-3 py-2">สินค้า</th>
-                <th className="px-3 py-2">ยอดยกมา</th>
-                <th className="px-3 py-2">รับเข้า</th>
-                <th className="px-3 py-2">เบิกใช้</th>
-                <th className="px-3 py-2">ปรับเพิ่ม</th>
-                <th className="px-3 py-2">ปรับลด</th>
-                <th className="px-3 py-2">โอนเข้า</th>
-                <th className="px-3 py-2">โอนออก</th>
-                <th className="px-3 py-2">ยอดปลายปี</th>
-                <th className="px-3 py-2">มูลค่าปลายปี (LAK)</th>
+                <th className="px-3 py-3">SKU</th>
+                <th className="px-3 py-3">ສິນຄ້າ</th>
+                <th className="px-3 py-3">ຍອດຍົກມາ</th>
+                <th className="px-3 py-3">ຮັບເຂົ້າ</th>
+                <th className="px-3 py-3">ເບີກໃຊ້</th>
+                <th className="px-3 py-3">ປັບເພີ່ມ</th>
+                <th className="px-3 py-3">ປັບລົດ</th>
+                <th className="px-3 py-3">ໂອນເຂົ້າ</th>
+                <th className="px-3 py-3">ໂອນອອກ</th>
+                <th className="px-3 py-3">ຍອດທ້າຍປີ</th>
+                <th className="px-3 py-3">ມູນຄ່າທ້າຍປີ (LAK)</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-gray-100">
               {data?.map((r) => (
                 <tr key={r.product_id}>
-                  <td className="px-3 py-2">{r.sku}</td>
-                  <td className="px-3 py-2 font-medium text-gray-800">{r.product_name}</td>
-                  <td className="px-3 py-2">{r.opening_qty ?? 0}</td>
-                  <td className="px-3 py-2">{r.received_qty}</td>
-                  <td className="px-3 py-2">{r.issued_qty}</td>
-                  <td className="px-3 py-2">{r.adjust_in_qty}</td>
-                  <td className="px-3 py-2">{r.adjust_out_qty}</td>
-                  <td className="px-3 py-2">{r.transfer_in_qty}</td>
-                  <td className="px-3 py-2">{r.transfer_out_qty}</td>
-                  <td className="px-3 py-2 font-medium">{r.closing_qty ?? 0}</td>
-                  <td className="px-3 py-2">{Number(r.closing_value_lak || 0).toLocaleString()}</td>
+                  <td className="px-3 py-3">{r.sku}</td>
+                  <td className="px-3 py-3 font-medium text-gray-800">{r.product_name}</td>
+                  <td className="px-3 py-3">{r.opening_qty ?? 0}</td>
+                  <td className="px-3 py-3">{r.received_qty}</td>
+                  <td className="px-3 py-3">{r.issued_qty}</td>
+                  <td className="px-3 py-3">{r.adjust_in_qty}</td>
+                  <td className="px-3 py-3">{r.adjust_out_qty}</td>
+                  <td className="px-3 py-3">{r.transfer_in_qty}</td>
+                  <td className="px-3 py-3">{r.transfer_out_qty}</td>
+                  <td className="px-3 py-3 font-medium">{r.closing_qty ?? 0}</td>
+                  <td className="px-3 py-3">{Number(r.closing_value_lak || 0).toLocaleString()}</td>
                 </tr>
               ))}
               {!data?.length && (
                 <tr>
                   <td colSpan={11} className="px-4 py-8 text-center text-gray-400">
-                    ไม่พบข้อมูลของปีนี้
+                    ບໍ່ພົບຂໍ້ມູນຂອງປີນີ້
                   </td>
                 </tr>
               )}

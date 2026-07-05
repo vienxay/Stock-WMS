@@ -35,12 +35,12 @@ const login = asyncHandler(async (req, res) => {
 
   const user = users[0];
   if (!user || !user.is_active) {
-    throw new AppError(401, "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    throw new AppError(401, "ຊື່ຜູ້ໃຊ້ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
   }
 
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) {
-    throw new AppError(401, "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    throw new AppError(401, "ຊື່ຜູ້ໃຊ້ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
   }
 
   const roles = await fetchRoles(pool, user.id);

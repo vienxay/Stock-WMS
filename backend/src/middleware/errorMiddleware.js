@@ -4,7 +4,7 @@ const logger = require("../utils/logger");
 
 // ไม่เจอ route ไหนเลย -> ส่งต่อเป็น 404 error ให้ errorHandler จัดการ
 function notFound(req, res, next) {
-  next(new AppError(404, `ไม่พบ route: ${req.method} ${req.originalUrl}`));
+  next(new AppError(404, `ບໍ່ພົບ route: ${req.method} ${req.originalUrl}`));
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -18,7 +18,7 @@ function errorHandler(err, req, res, next) {
   if (err instanceof ZodError) {
     return res
       .status(400)
-      .json({ error: "ข้อมูลไม่ถูกต้อง", details: err.issues });
+      .json({ error: "ຂໍ້ມູນບໍ່ຖືກຕ້ອງ", details: err.issues });
   }
 
   // FK constraint ไม่ผ่าน เช่น อ้างอิง id ที่ไม่มีอยู่จริง
@@ -28,18 +28,18 @@ function errorHandler(err, req, res, next) {
   ) {
     return res
       .status(409)
-      .json({ error: "ข้อมูลอ้างอิงไม่ถูกต้องหรือถูกใช้งานอยู่" });
+      .json({ error: "ຂໍ້ມູນອ້າງອີງບໍ່ຖືກຕ້ອງ ຫຼືກຳລັງຖືກໃຊ້ງານຢູ່" });
   }
 
   // ค่าซ้ำใน UNIQUE column เช่น username, sku
   if (err.code === "ER_DUP_ENTRY") {
-    return res.status(409).json({ error: "ข้อมูลนี้มีอยู่ในระบบแล้ว" });
+    return res.status(409).json({ error: "ຂໍ້ມູນນີ້ມີຢູ່ໃນລະບົບແລ້ວ" });
   }
 
   logger.error(err.message, { stack: err.stack });
   return res
     .status(500)
-    .json({ error: "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง" });
+    .json({ error: "ເກີດຂໍ້ຜິດພາດໃນລະບົບ ກະລຸນາລອງໃໝ່ອີກຄັ້ງ" });
 }
 
 module.exports = { notFound, errorHandler };

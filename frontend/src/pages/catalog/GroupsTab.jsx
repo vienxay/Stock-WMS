@@ -34,7 +34,7 @@ export default function GroupsTab() {
   const createMutation = useMutation({
     mutationFn: createGroup,
     onSuccess: () => {
-      toastSuccess("เพิ่มกลุ่มสินค้าแล้ว");
+      toastSuccess("ເພີ່ມກຸ່ມສິນຄ້າແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -44,7 +44,7 @@ export default function GroupsTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateGroup(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       invalidate();
       setModalOpen(false);
     },
@@ -84,35 +84,35 @@ export default function GroupsTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={openCreate}>+ เพิ่มกลุ่มสินค้า</Button>
+        <Button onClick={openCreate}>+ ເພີ່ມກຸ່ມສິນຄ້າ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อ (ลาว)</th>
-            <th className="px-4 py-2">ชื่อ (จีน)</th>
-            <th className="px-4 py-2">ประเภทคลัง</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">ຊື່ (ລາວ)</th>
+            <th className="px-4 py-3">ຊື່ (ຈີນ)</th>
+            <th className="px-4 py-3">ປະເພດຄັງ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((g) => (
             <tr key={g.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {g.name_lo}
               </td>
-              <td className="px-4 py-2">{g.name_cn || "-"}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">{g.name_cn || "-"}</td>
+              <td className="px-4 py-3">
                 {warehouseTypes?.find((t) => t.id === g.warehouse_type_id)
                   ?.name || "-"}
               </td>
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <button
                   onClick={() => openEdit(g)}
                   className="text-blue-600 hover:underline"
                 >
-                  แก้ไข
+                  ແກ້ໄຂ
                 </button>
               </td>
             </tr>
@@ -122,11 +122,11 @@ export default function GroupsTab() {
 
       <Modal
         open={modalOpen}
-        title={editingId ? "แก้ไขกลุ่มสินค้า" : "เพิ่มกลุ่มสินค้า"}
+        title={editingId ? "ແກ້ໄຂກຸ່ມສິນຄ້າ" : "ເພີ່ມກຸ່ມສິນຄ້າ"}
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="ชื่อ (ลาว)">
+          <FormField label="ຊື່ (ລາວ)">
             <input
               className={inputClass}
               value={form.nameLo}
@@ -134,14 +134,14 @@ export default function GroupsTab() {
               required
             />
           </FormField>
-          <FormField label="ชื่อ (จีน)">
+          <FormField label="ຊື່ (ຈີນ)">
             <input
               className={inputClass}
               value={form.nameCn}
               onChange={(e) => setForm({ ...form, nameCn: e.target.value })}
             />
           </FormField>
-          <FormField label="ประเภทคลังที่เกี่ยวข้อง (ถ้ามี)">
+          <FormField label="ປະເພດຄັງທີ່ກ່ຽວຂ້ອງ (ຖ້າມີ)">
             <select
               className={selectClass}
               value={form.warehouseTypeId}
@@ -149,7 +149,7 @@ export default function GroupsTab() {
                 setForm({ ...form, warehouseTypeId: e.target.value })
               }
             >
-              <option value="">-- ไม่ระบุ --</option>
+              <option value="">-- ບໍ່ລະບຸ --</option>
               {warehouseTypes?.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -163,13 +163,13 @@ export default function GroupsTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

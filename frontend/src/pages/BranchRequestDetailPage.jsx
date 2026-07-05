@@ -39,7 +39,7 @@ export default function BranchRequestDetailPage() {
   const approveMutation = useMutation({
     mutationFn: (items) => approveBranchRequest(id, { items }),
     onSuccess: () => {
-      toastSuccess("อนุมัติคำขอแล้ว");
+      toastSuccess("ອະນຸມັດຄຳຂໍແລ້ວ");
       invalidate();
       setApproveModalOpen(false);
     },
@@ -49,7 +49,7 @@ export default function BranchRequestDetailPage() {
   const rejectMutation = useMutation({
     mutationFn: () => rejectBranchRequest(id, {}),
     onSuccess: () => {
-      toastSuccess("ปฏิเสธคำขอแล้ว");
+      toastSuccess("ປະຕິເສດຄຳຂໍແລ້ວ");
       invalidate();
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -58,7 +58,7 @@ export default function BranchRequestDetailPage() {
   const transferMutation = useMutation({
     mutationFn: () => transferBranchRequest(id),
     onSuccess: () => {
-      toastSuccess("โอนสต็อกแล้ว");
+      toastSuccess("ໂອນສະຕັອກແລ້ວ");
       invalidate();
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -84,14 +84,14 @@ export default function BranchRequestDetailPage() {
   };
 
   const handleReject = async () => {
-    const result = await confirmAction({ title: "ปฏิเสธคำขอนี้?" });
+    const result = await confirmAction({ title: "ປະຕິເສດຄຳຂໍນີ້?" });
     if (result.isConfirmed) rejectMutation.mutate();
   };
 
   const handleTransfer = async () => {
     const result = await confirmAction({
-      title: "ยืนยันโอนสต็อก?",
-      text: "ระบบจะตัดสต็อกจาก HQ และเพิ่มให้สาขาทันที",
+      title: "ຢືນຢັນໂອນສະຕັອກ?",
+      text: "ລະບົບຈະຕັດສະຕັອກຈາກ HQ ແລະເພີ່ມໃຫ້ສາຂາທັນທີ",
     });
     if (result.isConfirmed) transferMutation.mutate();
   };
@@ -104,49 +104,49 @@ export default function BranchRequestDetailPage() {
         to="/branch-requests"
         className="text-sm text-blue-600 hover:underline"
       >
-        &larr; กลับไปรายการคำขอเบิก
+        &larr; ກັບໄປລາຍການຄຳຂໍເບີກ
       </Link>
 
       <div className="flex items-center justify-between mt-2 mb-4">
         <h2 className="text-xl font-bold text-gray-800">
-          คำขอเบิก #{request.id}
+          ຄຳຂໍເບີກ #{request.id}
         </h2>
         <StatusBadge status={request.status} />
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm p-5 mb-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      <div className="bg-white rounded-lg shadow-sm p-5 mb-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
         <div>
-          <div className="text-gray-500">จากคลัง (HQ)</div>
+          <div className="text-gray-500">ຈາກຄັງ (HQ)</div>
           <div className="font-medium">{request.from_warehouse_name}</div>
         </div>
         <div>
-          <div className="text-gray-500">ไปคลัง (สาขา)</div>
+          <div className="text-gray-500">ໄປຄັງ (ສາຂາ)</div>
           <div className="font-medium">{request.to_warehouse_name}</div>
         </div>
         <div>
-          <div className="text-gray-500">หมายเหตุ</div>
+          <div className="text-gray-500">ໝາຍເຫດ</div>
           <div className="font-medium">{request.note || "-"}</div>
         </div>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border mb-6">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 mb-6">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">SKU</th>
-            <th className="px-4 py-2">สินค้า</th>
-            <th className="px-4 py-2">จำนวนที่ขอ</th>
-            <th className="px-4 py-2">จำนวนที่อนุมัติ</th>
+            <th className="px-4 py-3">SKU</th>
+            <th className="px-4 py-3">ສິນຄ້າ</th>
+            <th className="px-4 py-3">ຈຳນວນທີ່ຂໍ</th>
+            <th className="px-4 py-3">ຈຳນວນທີ່ອະນຸມັດ</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {request.items.map((it) => (
             <tr key={it.id}>
-              <td className="px-4 py-2">{it.sku}</td>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3">{it.sku}</td>
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {it.product_name}
               </td>
-              <td className="px-4 py-2">{it.quantity_requested}</td>
-              <td className="px-4 py-2">{it.quantity_approved ?? "-"}</td>
+              <td className="px-4 py-3">{it.quantity_requested}</td>
+              <td className="px-4 py-3">{it.quantity_approved ?? "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -155,9 +155,9 @@ export default function BranchRequestDetailPage() {
       <div className="flex gap-2">
         {request.status === "PENDING" && canApprove && (
           <>
-            <Button onClick={openApprove}>อนุมัติ</Button>
+            <Button onClick={openApprove}>ອະນຸມັດ</Button>
             <Button variant="danger" onClick={handleReject}>
-              ปฏิเสธ
+              ປະຕິເສດ
             </Button>
           </>
         )}
@@ -167,14 +167,14 @@ export default function BranchRequestDetailPage() {
             onClick={handleTransfer}
             disabled={transferMutation.isPending}
           >
-            โอนสต็อกไปยังสาขา
+            ໂອນສະຕັອກໄປຍັງສາຂາ
           </Button>
         )}
       </div>
 
       <Modal
         open={approveModalOpen}
-        title="อนุมัติคำขอเบิก"
+        title="ອະນຸມັດຄຳຂໍເບີກ"
         onClose={() => setApproveModalOpen(false)}
       >
         <form onSubmit={handleApproveSubmit}>
@@ -185,7 +185,7 @@ export default function BranchRequestDetailPage() {
                 className="flex items-center justify-between gap-3"
               >
                 <span className="text-sm">
-                  {it.sku} — {it.product_name} (ขอ {it.quantity_requested})
+                  {it.sku} — {it.product_name} (ຂໍ {it.quantity_requested})
                 </span>
                 <input
                   type="number"
@@ -206,10 +206,10 @@ export default function BranchRequestDetailPage() {
               variant="secondary"
               onClick={() => setApproveModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={approveMutation.isPending}>
-              ยืนยันอนุมัติ
+              ຢືນຢັນອະນຸມັດ
             </Button>
           </div>
         </form>

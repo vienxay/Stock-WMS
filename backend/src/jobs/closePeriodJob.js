@@ -125,7 +125,7 @@ async function generateMonthlySummary(year, month) {
     );
   }
 
-  logger.info(`generateMonthlySummary: ${period} (${pairKeys.size} รายการ)`);
+  logger.info(`generateMonthlySummary: ${period} (${pairKeys.size} ລາຍການ)`);
 }
 
 // ล็อกยอดทั้งปีไม่ให้แก้ไขย้อนหลังอีก (เรียกตอนขึ้นปีใหม่ เพื่อปิดปีที่ผ่านมา)
@@ -135,7 +135,7 @@ async function closeYear(year) {
      WHERE period BETWEEN ? AND ? AND closed_at IS NULL`,
     [formatPeriod(year, 1), formatPeriod(year, 12)],
   );
-  logger.info(`closeYear: ${year} ล็อกไป ${result.affectedRows} แถว`);
+  logger.info(`closeYear: ${year} ລ໊ອກໄປ ${result.affectedRows} ແຖວ`);
 }
 
 function start() {
@@ -150,7 +150,7 @@ function start() {
     try {
       await generateMonthlySummary(year, month);
     } catch (err) {
-      logger.error("generateMonthlySummary ล้มเหลว", { error: err.message });
+      logger.error("generateMonthlySummary ລົ້ມເຫຼວ", { error: err.message });
     }
   });
 
@@ -160,7 +160,7 @@ function start() {
     try {
       await closeYear(lastYear);
     } catch (err) {
-      logger.error("closeYear ล้มเหลว", { error: err.message });
+      logger.error("closeYear ລົ້ມເຫຼວ", { error: err.message });
     }
   });
 

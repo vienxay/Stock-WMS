@@ -9,7 +9,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
-  message: { error: "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
+  message: { error: "ພະຍາຍາມເຂົ້າສູ່ລະບົບເລື້ອຍເກີນໄປ ກະລຸນາລອງໃໝ່ພາຍຫຼັງ" },
 });
 
 router.post("/login", loginLimiter, login);

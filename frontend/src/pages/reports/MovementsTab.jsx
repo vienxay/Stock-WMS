@@ -37,7 +37,7 @@ export default function MovementsTab() {
             setOffset(0)
           }}
         >
-          <option value="">-- ทุกคลัง --</option>
+          <option value="">-- ທຸກຄັງ --</option>
           {warehouses?.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}
@@ -52,7 +52,7 @@ export default function MovementsTab() {
             setOffset(0)
           }}
         >
-          <option value="">-- ทุกประเภท --</option>
+          <option value="">-- ທຸກປະເພດ --</option>
           {MOVEMENT_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}
@@ -65,38 +65,38 @@ export default function MovementsTab() {
         <Spinner />
       ) : (
         <>
-          <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-            <thead className="bg-gray-50 text-gray-500 text-left">
+          <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+            <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
               <tr>
-                <th className="px-4 py-2">วันที่</th>
-                <th className="px-4 py-2">SKU</th>
-                <th className="px-4 py-2">สินค้า</th>
-                <th className="px-4 py-2">คลัง</th>
-                <th className="px-4 py-2">ประเภท</th>
-                <th className="px-4 py-2">จำนวน</th>
-                <th className="px-4 py-2">มูลค่า (LAK)</th>
-                <th className="px-4 py-2">ผู้บันทึก</th>
+                <th className="px-4 py-3">ວັນທີ</th>
+                <th className="px-4 py-3">SKU</th>
+                <th className="px-4 py-3">ສິນຄ້າ</th>
+                <th className="px-4 py-3">ຄັງ</th>
+                <th className="px-4 py-3">ປະເພດ</th>
+                <th className="px-4 py-3">ຈຳນວນ</th>
+                <th className="px-4 py-3">ມູນຄ່າ (LAK)</th>
+                <th className="px-4 py-3">ຜູ້ບັນທຶກ</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-gray-100">
               {data?.map((m) => (
                 <tr key={m.id}>
-                  <td className="px-4 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString('th-TH')}</td>
-                  <td className="px-4 py-2">{m.sku}</td>
-                  <td className="px-4 py-2 font-medium text-gray-800">{m.product_name}</td>
-                  <td className="px-4 py-2">{m.warehouse_name}</td>
-                  <td className="px-4 py-2">{m.movement_type}</td>
-                  <td className={`px-4 py-2 ${Number(m.quantity) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <td className="px-4 py-3 whitespace-nowrap">{new Date(m.created_at).toLocaleString('th-TH')}</td>
+                  <td className="px-4 py-3">{m.sku}</td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{m.product_name}</td>
+                  <td className="px-4 py-3">{m.warehouse_name}</td>
+                  <td className="px-4 py-3">{m.movement_type}</td>
+                  <td className={`px-4 py-3 ${Number(m.quantity) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {m.quantity}
                   </td>
-                  <td className="px-4 py-2">{Number(m.total_value_lak).toLocaleString()}</td>
-                  <td className="px-4 py-2">{m.created_by_username}</td>
+                  <td className="px-4 py-3">{Number(m.total_value_lak).toLocaleString()}</td>
+                  <td className="px-4 py-3">{m.created_by_username}</td>
                 </tr>
               ))}
               {!data?.length && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
-                    ไม่พบข้อมูล
+                    ບໍ່ພົບຂໍ້ມູນ
                   </td>
                 </tr>
               )}
@@ -105,14 +105,14 @@ export default function MovementsTab() {
 
           <div className="flex justify-between mt-3">
             <Button variant="secondary" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
-              ก่อนหน้า
+              ກ່ອນໜ້າ
             </Button>
             <Button
               variant="secondary"
               disabled={!data || data.length < PAGE_SIZE}
               onClick={() => setOffset(offset + PAGE_SIZE)}
             >
-              ถัดไป
+              ຖັດໄປ
             </Button>
           </div>
         </>

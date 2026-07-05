@@ -33,7 +33,7 @@ export default function DepartmentsTab() {
   const createMutation = useMutation({
     mutationFn: createDepartment,
     onSuccess: () => {
-      toastSuccess("เพิ่มแผนกแล้ว");
+      toastSuccess("ເພີ່ມພະແນກແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       setModalOpen(false);
       setForm(EMPTY_FORM);
@@ -51,21 +51,21 @@ export default function DepartmentsTab() {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <Button onClick={() => setModalOpen(true)}>+ เพิ่มแผนก</Button>
+        <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມພະແນກ</Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">ชื่อแผนก</th>
-            <th className="px-4 py-2">สาขา</th>
+            <th className="px-4 py-3">ຊື່ພະແນກ</th>
+            <th className="px-4 py-3">ສາຂາ</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {data?.map((d) => (
             <tr key={d.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">{d.name}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3 font-medium text-gray-800">{d.name}</td>
+              <td className="px-4 py-3">
                 {branches?.find((b) => b.id === d.branch_id)?.name ||
                   d.branch_id}
               </td>
@@ -76,18 +76,18 @@ export default function DepartmentsTab() {
 
       <Modal
         open={modalOpen}
-        title="เพิ่มแผนก"
+        title="ເພີ່ມພະແນກ"
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="สาขา">
+          <FormField label="ສາຂາ">
             <select
               className={selectClass}
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
               required
             >
-              <option value="">-- เลือกสาขา --</option>
+              <option value="">-- ເລືອກສາຂາ --</option>
               {branches?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -95,7 +95,7 @@ export default function DepartmentsTab() {
               ))}
             </select>
           </FormField>
-          <FormField label="ชื่อแผนก">
+          <FormField label="ຊື່ພະແນກ">
             <input
               className={inputClass}
               value={form.name}
@@ -109,10 +109,10 @@ export default function DepartmentsTab() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>

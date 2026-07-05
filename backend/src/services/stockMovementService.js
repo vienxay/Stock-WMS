@@ -20,7 +20,7 @@ async function recordMovement(runner, params) {
   } = params;
 
   if (!quantity) {
-    throw new AppError(500, 'quantity ของ stock movement ต้องไม่เป็น 0');
+    throw new AppError(500, 'quantity ຂອງ stock movement ຕ້ອງບໍ່ເປັນ 0');
   }
 
   await runner.query(
@@ -41,7 +41,7 @@ async function recordMovement(runner, params) {
 
   if (quantity > 0) {
     if (unitValueLak === undefined || unitValueLak === null) {
-      throw new AppError(500, 'ต้องระบุ unitValueLak สำหรับการเคลื่อนไหวขาเข้า');
+      throw new AppError(500, 'ຕ້ອງລະບຸ unitValueLak ສຳລັບການເຄື່ອນໄຫວຂາເຂົ້າ');
     }
     const newQty = Number(balance.quantity) + Number(quantity);
     const newAvgValue =
@@ -60,7 +60,7 @@ async function recordMovement(runner, params) {
     effectiveUnitValue = Number(balance.avg_unit_value_lak);
     const newQty = Number(balance.quantity) + Number(quantity);
     if (newQty < 0) {
-      throw new AppError(400, 'สต็อกคงเหลือไม่พอสำหรับรายการนี้');
+      throw new AppError(400, 'ສະຕັອກຄົງເຫຼືອບໍ່ພໍສຳລັບລາຍການນີ້');
     }
     await runner.query(
       `UPDATE stock_balance SET quantity = ? WHERE product_id = ? AND warehouse_id = ?`,

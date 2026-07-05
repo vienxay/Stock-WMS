@@ -43,7 +43,7 @@ export default function StockTakesPage() {
   const createMutation = useMutation({
     mutationFn: createStockTake,
     onSuccess: (stockTake) => {
-      toastSuccess("เปิดรอบตรวจนับแล้ว");
+      toastSuccess("ເປີດຮອບກວດນັບແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["stock-takes"] });
       setModalOpen(false);
       setForm(EMPTY_FORM);
@@ -60,9 +60,9 @@ export default function StockTakesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">ตรวจนับสต็อก</h2>
+        <h2 className="text-xl font-bold text-gray-800">ກວດນັບສະຕັອກ</h2>
         {canCreate && (
-          <Button onClick={() => setModalOpen(true)}>+ เปิดรอบตรวจนับ</Button>
+          <Button onClick={() => setModalOpen(true)}>+ ເປີດຮອບກວດນັບ</Button>
         )}
       </div>
 
@@ -71,7 +71,7 @@ export default function StockTakesPage() {
         value={warehouseId}
         onChange={(e) => setWarehouseId(e.target.value)}
       >
-        <option value="">-- ทุกคลัง --</option>
+        <option value="">-- ທຸກຄັງ --</option>
         {warehouses?.map((w) => (
           <option key={w.id} value={w.id}>
             {w.name}
@@ -82,28 +82,28 @@ export default function StockTakesPage() {
       {isLoading ? (
         <Spinner />
       ) : (
-        <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-          <thead className="bg-gray-50 text-gray-500 text-left">
+        <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+          <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              <th className="px-4 py-2">เลขที่</th>
-              <th className="px-4 py-2">คลัง</th>
-              <th className="px-4 py-2">วันที่นับ</th>
-              <th className="px-4 py-2">สถานะ</th>
+              <th className="px-4 py-3">ເລກທີ</th>
+              <th className="px-4 py-3">ຄັງ</th>
+              <th className="px-4 py-3">ວັນທີນັບ</th>
+              <th className="px-4 py-3">ສະຖານະ</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-100">
             {data?.map((st) => (
               <tr
                 key={st.id}
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => navigate(`/stock-takes/${st.id}`)}
               >
-                <td className="px-4 py-2 font-medium text-gray-800">
+                <td className="px-4 py-3 font-medium text-gray-800">
                   #{st.id}
                 </td>
-                <td className="px-4 py-2">{st.warehouse_name}</td>
-                <td className="px-4 py-2">{st.count_date?.slice(0, 10)}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">{st.warehouse_name}</td>
+                <td className="px-4 py-3">{st.count_date?.slice(0, 10)}</td>
+                <td className="px-4 py-3">
                   <StatusBadge status={st.status} />
                 </td>
               </tr>
@@ -111,7 +111,7 @@ export default function StockTakesPage() {
             {!data?.length && (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                  ยังไม่มีรอบตรวจนับ
+                  ຍັງບໍ່ມີຮອບກວດນັບ
                 </td>
               </tr>
             )}
@@ -121,11 +121,11 @@ export default function StockTakesPage() {
 
       <Modal
         open={modalOpen}
-        title="เปิดรอบตรวจนับสต็อก"
+        title="ເປີດຮອບກວດນັບສະຕັອກ"
         onClose={() => setModalOpen(false)}
       >
         <form onSubmit={handleSubmit}>
-          <FormField label="คลัง">
+          <FormField label="ຄັງ">
             <select
               className={selectClass}
               value={form.warehouseId}
@@ -134,7 +134,7 @@ export default function StockTakesPage() {
               }
               required
             >
-              <option value="">-- เลือกคลัง --</option>
+              <option value="">-- ເລືອກຄັງ --</option>
               {warehouses?.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name}
@@ -142,7 +142,7 @@ export default function StockTakesPage() {
               ))}
             </select>
           </FormField>
-          <FormField label="วันที่นับ">
+          <FormField label="ວັນທີນັບ">
             <input
               type="date"
               className={inputClass}
@@ -152,7 +152,7 @@ export default function StockTakesPage() {
             />
           </FormField>
           <p className="text-xs text-gray-400 mb-4">
-            ระบบจะดึงยอดคงเหลือปัจจุบันของทุกสินค้าในคลังนี้มาเป็นค่าตั้งต้นให้อัตโนมัติ
+            ລະບົບຈະດຶງຍອດຄົງເຫຼືອປັດຈຸບັນຂອງທຸກສິນຄ້າໃນຄັງນີ້ມາເປັນຄ່າຕັ້ງຕົ້ນໃຫ້ອັດຕະໂນມັດ
           </p>
           <div className="flex justify-end gap-2">
             <Button
@@ -160,10 +160,10 @@ export default function StockTakesPage() {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              เปิดรอบตรวจนับ
+              ເປີດຮອບກວດນັບ
             </Button>
           </div>
         </form>

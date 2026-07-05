@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Boxes } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { apiErrorMessage } from "../api/client";
 import Button from "../components/ui/Button";
+import { inputClass } from "../components/ui/FormField";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -29,33 +31,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm"
+        className="bg-white p-8 rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-sm animate-fade-in"
       >
-        <h1 className="text-xl font-bold text-blue-700 mb-1">Stock WMS</h1>
-        <p className="text-sm text-gray-500 mb-6">ระบบคลังสินค้าภายในองค์กร</p>
+        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-600/30">
+          <Boxes size={24} className="text-white" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Stock WMS</h1>
+        <p className="text-sm text-gray-500 mb-6">ລະບົບຄັງສິນຄ້າພາຍໃນອົງກອນ</p>
 
         {error && (
-          <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+          <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {error}
           </div>
         )}
 
-        <label className="block text-sm text-gray-700 mb-1">ชื่อผู้ใช้</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          ຊື່ຜູ້ໃຊ້
+        </label>
         <input
-          className="w-full border rounded-md px-3 py-2 mb-4 text-sm"
+          className={`${inputClass} mb-4`}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoFocus
           required
         />
 
-        <label className="block text-sm text-gray-700 mb-1">รหัสผ่าน</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          ລະຫັດຜ່ານ
+        </label>
         <input
           type="password"
-          className="w-full border rounded-md px-3 py-2 mb-6 text-sm"
+          className={`${inputClass} mb-6`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -66,7 +75,7 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full justify-center"
         >
-          {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+          {loading ? "ກຳລັງເຂົ້າສູ່ລະບົບ..." : "ເຂົ້າສູ່ລະບົບ"}
         </Button>
       </form>
     </div>

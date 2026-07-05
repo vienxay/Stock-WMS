@@ -15,6 +15,7 @@ router.get("/:id", ctrl.getProduct);
 router.get("/:id/stock", ctrl.getProductStock);
 router.post("/", canManageCatalog, ctrl.createProduct);
 router.put("/:id", canManageCatalog, ctrl.updateProduct);
+router.delete("/:id", canManageCatalog, ctrl.deleteProduct);
 
 router.post(
   "/:id/images",

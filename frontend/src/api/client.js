@@ -40,6 +40,6 @@ export function apiErrorMessage(error) {
   return (
     error?.response?.data?.error ||
     error?.message ||
-    "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"
+    "ເກີດຂໍ້ຜິດພາດທີ່ບໍ່ຮູ້ສາເຫດ"
   );
 }

@@ -51,6 +51,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth ต้องใช้ภายใน AuthProvider");
+  if (!ctx) throw new Error("useAuth ຕ້ອງໃຊ້ພາຍໃນ AuthProvider");
   return ctx;
 }

@@ -5,17 +5,17 @@ import ExchangeRatesTab from "./currency/ExchangeRatesTab";
 export default function CurrencyPage() {
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-800 mb-4">สกุลเงิน</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">ສະກຸນເງິນ</h2>
       <Tabs
         tabs={[
           {
             key: "currencies",
-            label: "สกุลเงิน",
+            label: "ສະກຸນເງິນ",
             component: <CurrenciesTab />,
           },
           {
             key: "exchange-rates",
-            label: "อัตราแลกเปลี่ยน",
+            label: "ອັດຕາແລກປ່ຽນ",
             component: <ExchangeRatesTab />,
           },
         ]}

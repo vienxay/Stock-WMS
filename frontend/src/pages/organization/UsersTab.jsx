@@ -45,7 +45,7 @@ export default function UsersTab() {
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
-      toastSuccess("สร้างบัญชีผู้ใช้แล้ว");
+      toastSuccess("ສ້າງບັນຊີຜູ້ໃຊ້ແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setCreateModalOpen(false);
       setCreateForm(EMPTY_CREATE_FORM);
@@ -56,7 +56,7 @@ export default function UsersTab() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => updateUser(id, body),
     onSuccess: () => {
-      toastSuccess("บันทึกแล้ว");
+      toastSuccess("ບັນທຶກແລ້ວ");
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setEditUser(null);
     },
@@ -72,42 +72,42 @@ export default function UsersTab() {
     <div>
       <div className="flex justify-end mb-3">
         <Button onClick={() => setCreateModalOpen(true)}>
-          + สร้างบัญชีผู้ใช้
+          + ສ້າງບັນຊີຜູ້ໃຊ້
         </Button>
       </div>
 
-      <table className="w-full text-sm bg-white rounded-lg overflow-hidden shadow-sm border">
-        <thead className="bg-gray-50 text-gray-500 text-left">
+      <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+        <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
           <tr>
-            <th className="px-4 py-2">Username</th>
-            <th className="px-4 py-2">พนักงาน</th>
-            <th className="px-4 py-2">สถานะ</th>
-            <th className="px-4 py-2"></th>
+            <th className="px-4 py-3">Username</th>
+            <th className="px-4 py-3">ພະນັກງານ</th>
+            <th className="px-4 py-3">ສະຖານະ</th>
+            <th className="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {users?.map((u) => (
             <tr key={u.id}>
-              <td className="px-4 py-2 font-medium text-gray-800">
+              <td className="px-4 py-3 font-medium text-gray-800">
                 {u.username}
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">
                 {u.full_name} ({u.employee_code})
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3">
                 <button
                   onClick={() => toggleActive(u)}
                   className={u.is_active ? "text-emerald-600" : "text-red-600"}
                 >
-                  {u.is_active ? "ใช้งาน" : "ปิดใช้งาน"}
+                  {u.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
                 </button>
               </td>
-              <td className="px-4 py-2 text-right space-x-3">
+              <td className="px-4 py-3 text-right space-x-3">
                 <button
                   onClick={() => setRolesUser(u)}
                   className="text-blue-600 hover:underline"
                 >
-                  สิทธิ์
+                  ສິດທິ
                 </button>
                 <button
                   onClick={() => {
@@ -116,7 +116,7 @@ export default function UsersTab() {
                   }}
                   className="text-blue-600 hover:underline"
                 >
-                  รีเซ็ตรหัสผ่าน
+                  ຣີເຊັດລະຫັດຜ່ານ
                 </button>
               </td>
             </tr>
@@ -126,7 +126,7 @@ export default function UsersTab() {
 
       <Modal
         open={createModalOpen}
-        title="สร้างบัญชีผู้ใช้"
+        title="ສ້າງບັນຊີຜູ້ໃຊ້"
         onClose={() => setCreateModalOpen(false)}
       >
         <form
@@ -138,7 +138,7 @@ export default function UsersTab() {
             });
           }}
         >
-          <FormField label="พนักงาน">
+          <FormField label="ພະນັກງານ">
             <select
               className={selectClass}
               value={createForm.employeeId}
@@ -147,7 +147,7 @@ export default function UsersTab() {
               }
               required
             >
-              <option value="">-- เลือกพนักงาน --</option>
+              <option value="">-- ເລືອກພະນັກງານ --</option>
               {employees?.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.full_name} ({e.employee_code})
@@ -166,7 +166,7 @@ export default function UsersTab() {
               minLength={3}
             />
           </FormField>
-          <FormField label="รหัสผ่านเริ่มต้น (อย่างน้อย 8 ตัว)">
+          <FormField label="ລະຫັດຜ່ານເລີ່ມຕົ້ນ (ຢ່າງໜ້ອຍ 8 ຕົວ)">
             <input
               type="password"
               className={inputClass}
@@ -184,10 +184,10 @@ export default function UsersTab() {
               variant="secondary"
               onClick={() => setCreateModalOpen(false)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              สร้างบัญชี
+              ສ້າງບັນຊີ
             </Button>
           </div>
         </form>
@@ -195,7 +195,7 @@ export default function UsersTab() {
 
       <Modal
         open={!!editUser}
-        title={`รีเซ็ตรหัสผ่าน: ${editUser?.username}`}
+        title={`ຣີເຊັດລະຫັດຜ່ານ: ${editUser?.username}`}
         onClose={() => setEditUser(null)}
       >
         <form
@@ -207,7 +207,7 @@ export default function UsersTab() {
             });
           }}
         >
-          <FormField label="รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)">
+          <FormField label="ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 8 ຕົວ)">
             <input
               type="password"
               className={inputClass}
@@ -223,10 +223,10 @@ export default function UsersTab() {
               variant="secondary"
               onClick={() => setEditUser(null)}
             >
-              ยกเลิก
+              ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={updateMutation.isPending}>
-              บันทึก
+              ບັນທຶກ
             </Button>
           </div>
         </form>
@@ -260,7 +260,7 @@ function UserRolesModal({ user, onClose }) {
   const assignMutation = useMutation({
     mutationFn: assignUserRole,
     onSuccess: () => {
-      toastSuccess("มอบสิทธิ์แล้ว");
+      toastSuccess("ມອບສິດທິແລ້ວ");
       invalidate();
       setRoleId("");
       setWarehouseId("");
@@ -271,7 +271,7 @@ function UserRolesModal({ user, onClose }) {
   const revokeMutation = useMutation({
     mutationFn: revokeUserRole,
     onSuccess: () => {
-      toastSuccess("ถอนสิทธิ์แล้ว");
+      toastSuccess("ຖອນສິດທິແລ້ວ");
       invalidate();
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -287,12 +287,12 @@ function UserRolesModal({ user, onClose }) {
   };
 
   const handleRevoke = async (id) => {
-    const result = await confirmAction({ title: "ถอนสิทธิ์นี้?" });
+    const result = await confirmAction({ title: "ຖອນສິດທິນີ້?" });
     if (result.isConfirmed) revokeMutation.mutate(id);
   };
 
   return (
-    <Modal open title={`จัดการสิทธิ์: ${user.username}`} onClose={onClose}>
+    <Modal open title={`ຈັດການສິດທິ: ${user.username}`} onClose={onClose}>
       {isLoading ? (
         <Spinner />
       ) : (
@@ -306,32 +306,32 @@ function UserRolesModal({ user, onClose }) {
                 <span>
                   {r.role_code}
                   {r.warehouse_id
-                    ? ` — คลัง #${r.warehouse_id}`
-                    : " — ทั่วทั้งระบบ"}
+                    ? ` — ຄັງ #${r.warehouse_id}`
+                    : " — ທົ່ວທັງລະບົບ"}
                 </span>
                 <button
                   onClick={() => handleRevoke(r.id)}
                   className="text-red-600 hover:underline text-xs"
                 >
-                  ถอนสิทธิ์
+                  ຖອນສິດທິ
                 </button>
               </div>
             ))
           ) : (
-            <div className="text-gray-400 text-sm">ยังไม่มีสิทธิ์</div>
+            <div className="text-gray-400 text-sm">ຍັງບໍ່ມີສິດທິ</div>
           )}
         </div>
       )}
 
       <form onSubmit={handleAssign} className="border-t pt-4">
-        <FormField label="เพิ่มสิทธิ์: บทบาท">
+        <FormField label="ເພີ່ມສິດທິ: ບົດບາດ">
           <select
             className={selectClass}
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
             required
           >
-            <option value="">-- เลือกบทบาท --</option>
+            <option value="">-- ເລືອກບົດບາດ --</option>
             {roles?.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.code} — {r.name}
@@ -339,13 +339,13 @@ function UserRolesModal({ user, onClose }) {
             ))}
           </select>
         </FormField>
-        <FormField label="ขอบเขตคลัง (ไม่ระบุ = ทั่วทั้งระบบ)">
+        <FormField label="ຂອບເຂດຄັງ (ບໍ່ລະບຸ = ທົ່ວທັງລະບົບ)">
           <select
             className={selectClass}
             value={warehouseId}
             onChange={(e) => setWarehouseId(e.target.value)}
           >
-            <option value="">-- ทั่วทั้งระบบ --</option>
+            <option value="">-- ທົ່ວທັງລະບົບ --</option>
             {warehouses?.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name}
@@ -355,7 +355,7 @@ function UserRolesModal({ user, onClose }) {
         </FormField>
         <div className="flex justify-end">
           <Button type="submit" disabled={assignMutation.isPending}>
-            มอบสิทธิ์
+            ມອບສິດທິ
           </Button>
         </div>
       </form>

@@ -41,7 +41,7 @@ const getReceipt = asyncHandler(async (req, res) => {
     [req.params.id],
   );
   const receipt = receipts[0];
-  if (!receipt) throw new AppError(404, "ไม่พบใบรับสินค้านี้");
+  if (!receipt) throw new AppError(404, "ບໍ່ພົບໃບຮັບສິນຄ້ານີ້");
 
   const [items] = await pool.query(
     `SELECT sri.*, p.sku, p.name_lo AS product_name
@@ -65,11 +65,11 @@ const createReceipt = asyncHandler(async (req, res) => {
       "SELECT is_central FROM warehouses WHERE id = ? FOR UPDATE",
       [body.warehouseId],
     );
-    if (!warehouses.length) throw new AppError(404, "ไม่พบคลังนี้");
+    if (!warehouses.length) throw new AppError(404, "ບໍ່ພົບຄັງນີ້");
     if (!warehouses[0].is_central) {
       throw new AppError(
         400,
-        "รับสินค้าเข้าได้เฉพาะคลังส่วนกลาง (is_central) เท่านั้น",
+        "ຮັບສິນຄ້າເຂົ້າໄດ້ສະເພາະຄັງສ່ວນກາງ (is_central) ເທົ່ານັ້ນ",
       );
     }
 

@@ -6,12 +6,12 @@ import YearlySummaryTab from './reports/YearlySummaryTab'
 export default function ReportsPage() {
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-800 mb-4">รายงาน</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">ບົດລາຍງານ</h2>
       <Tabs
         tabs={[
-          { key: 'stock-balance', label: 'สต็อกคงเหลือ', component: <StockBalanceTab /> },
-          { key: 'movements', label: 'ประวัติการเคลื่อนไหว', component: <MovementsTab /> },
-          { key: 'yearly-summary', label: 'สรุปรายปี', component: <YearlySummaryTab /> },
+          { key: 'stock-balance', label: 'ສະຕັອກຄົງເຫຼືອ', component: <StockBalanceTab /> },
+          { key: 'movements', label: 'ປະຫວັດການເຄື່ອນໄຫວ', component: <MovementsTab /> },
+          { key: 'yearly-summary', label: 'ສະຫຼຸບລາຍປີ', component: <YearlySummaryTab /> },
         ]}
       />
     </div>

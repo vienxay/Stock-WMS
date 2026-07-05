@@ -1,18 +1,19 @@
-const COLORS = {
-  PENDING: "bg-amber-100 text-amber-800",
-  APPROVED: "bg-blue-100 text-blue-800",
-  REJECTED: "bg-red-100 text-red-800",
-  TRANSFERRED: "bg-emerald-100 text-emerald-800",
-  ISSUED: "bg-emerald-100 text-emerald-800",
-  IN_PROGRESS: "bg-amber-100 text-amber-800",
-  COMPLETED: "bg-emerald-100 text-emerald-800",
-};
+const STYLES = {
+  PENDING: { badge: 'bg-amber-50 text-amber-700 ring-amber-600/20', dot: 'bg-amber-500' },
+  APPROVED: { badge: 'bg-blue-50 text-blue-700 ring-blue-600/20', dot: 'bg-blue-500' },
+  REJECTED: { badge: 'bg-red-50 text-red-700 ring-red-600/20', dot: 'bg-red-500' },
+  TRANSFERRED: { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500' },
+  ISSUED: { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500' },
+  IN_PROGRESS: { badge: 'bg-amber-50 text-amber-700 ring-amber-600/20', dot: 'bg-amber-500' },
+  COMPLETED: { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500' },
+}
 
 export default function StatusBadge({ status }) {
-  const cls = COLORS[status] || "bg-gray-100 text-gray-800";
+  const style = STYLES[status] || { badge: 'bg-gray-50 text-gray-700 ring-gray-500/20', dot: 'bg-gray-400' }
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${style.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
       {status}
     </span>
-  );
+  )
 }

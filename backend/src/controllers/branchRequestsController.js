@@ -38,7 +38,7 @@ async function findRequestOr404(runner, id) {
     "SELECT * FROM branch_requests WHERE id = ?",
     [id],
   );
-  if (!rows.length) throw new AppError(404, "ไม่พบคำขอเบิกนี้");
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບຄຳຂໍເບີກນີ້");
   return rows[0];
 }
 
@@ -94,13 +94,13 @@ const createRequest = asyncHandler(async (req, res) => {
   );
   const from = warehouses.find((w) => w.id === body.fromWarehouseId);
   const to = warehouses.find((w) => w.id === body.toWarehouseId);
-  if (!from || !to) throw new AppError(404, "ไม่พบคลังต้นทางหรือปลายทาง");
+  if (!from || !to) throw new AppError(404, "ບໍ່ພົບຄັງຕົ້ນທາງ ຫຼືປາຍທາງ");
   if (!from.is_central)
-    throw new AppError(400, "คลังต้นทางต้องเป็นคลังส่วนกลาง (HQ)");
+    throw new AppError(400, "ຄັງຕົ້ນທາງຕ້ອງເປັນຄັງສ່ວນກາງ (HQ)");
   if (to.is_central)
-    throw new AppError(400, "คลังปลายทางต้องเป็นคลังสาขา ไม่ใช่คลังส่วนกลาง");
+    throw new AppError(400, "ຄັງປາຍທາງຕ້ອງເປັນຄັງສາຂາ ບໍ່ແມ່ນຄັງສ່ວນກາງ");
   if (from.warehouse_type_id !== to.warehouse_type_id) {
-    throw new AppError(400, "คลังต้นทางและปลายทางต้องเป็นคลังประเภทเดียวกัน");
+    throw new AppError(400, "ຄັງຕົ້ນທາງແລະປາຍທາງຕ້ອງເປັນຄັງປະເພດດຽວກັນ");
   }
 
   const conn = await pool.getConnection();
@@ -148,7 +148,7 @@ const approveRequest = asyncHandler(async (req, res) => {
 
     const request = await findRequestOr404(conn, req.params.id);
     if (request.status !== "PENDING") {
-      throw new AppError(400, "คำขอนี้ถูกดำเนินการไปแล้ว");
+      throw new AppError(400, "ຄຳຂໍນີ້ຖືກດຳເນີນການໄປແລ້ວ");
     }
 
     for (const item of body.items) {
@@ -180,7 +180,7 @@ const rejectRequest = asyncHandler(async (req, res) => {
   const body = rejectSchema.parse(req.body);
   const request = await findRequestOr404(pool, req.params.id);
   if (request.status !== "PENDING") {
-    throw new AppError(400, "คำขอนี้ถูกดำเนินการไปแล้ว");
+    throw new AppError(400, "ຄຳຂໍນີ້ຖືກດຳເນີນການໄປແລ້ວ");
   }
   await pool.query(
     `UPDATE branch_requests SET status = 'REJECTED', approved_by = ?, approved_at = NOW(), note = ?
@@ -199,7 +199,7 @@ const transferRequest = asyncHandler(async (req, res) => {
 
     const request = await findRequestOr404(conn, req.params.id);
     if (request.status !== "APPROVED") {
-      throw new AppError(400, "ต้องอนุมัติคำขอนี้ก่อนจึงจะโอนสต็อกได้");
+      throw new AppError(400, "ຕ້ອງອະນຸມັດຄຳຂໍນີ້ກ່ອນຈຶ່ງຈະໂອນສະຕັອກໄດ້");
     }
 
     const [items] = await conn.query(

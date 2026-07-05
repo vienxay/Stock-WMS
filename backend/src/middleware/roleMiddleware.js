@@ -8,7 +8,7 @@ function requireRole(...allowedCodes) {
     const ok = roles.some(
       (r) => r.code === "SYSTEM_ADMIN" || allowedCodes.includes(r.code),
     );
-    if (!ok) return next(new AppError(403, "ไม่มีสิทธิ์เข้าถึงส่วนนี้"));
+    if (!ok) return next(new AppError(403, "ບໍ່ມີສິດທິເຂົ້າເຖິງສ່ວນນີ້"));
     next();
   };
 }
@@ -30,7 +30,7 @@ function requireWarehouseAccess(allowedCodes, getWarehouseId) {
   return function (req, res, next) {
     const warehouseId = getWarehouseId(req);
     if (!hasWarehouseAccess(req.user, warehouseId, allowedCodes)) {
-      return next(new AppError(403, "ไม่มีสิทธิ์เข้าถึงคลังนี้"));
+      return next(new AppError(403, "ບໍ່ມີສິດທິເຂົ້າເຖິງຄັງນີ້"));
     }
     next();
   };

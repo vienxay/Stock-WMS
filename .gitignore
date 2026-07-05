@@ -1,5 +1,6 @@
 node_modules/
 backend/.env
+frontend/dist/
 backend/uploads/products/*
 !backend/uploads/products/.gitkeep
 backend/logs/

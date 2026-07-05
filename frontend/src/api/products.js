@@ -13,6 +13,11 @@ export const updateProduct = (id, body) =>
 export const deleteProduct = (id) =>
   apiClient.delete(`/products/${id}`).then((r) => r.data);
 
+export const bulkDeleteProducts = (ids) =>
+  apiClient
+    .delete("/products/bulk-delete", { data: { ids } })
+    .then((r) => r.data);
+
 export const uploadProductImage = (id, file, isPrimary) => {
   const form = new FormData();
   form.append("image", file);
@@ -31,3 +36,18 @@ export const setPrimaryProductImage = (id, imageId) =>
 
 export const deleteProductImage = (id, imageId) =>
   apiClient.delete(`/products/${id}/images/${imageId}`).then((r) => r.data);
+
+export const bulkImportProducts = (file) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiClient
+    .post("/products/bulk-import", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);
+};
+
+export const downloadImportTemplate = () =>
+  apiClient
+    .get("/products/import-template", { responseType: "blob" })
+    .then((r) => r.data);

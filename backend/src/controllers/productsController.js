@@ -1,6 +1,8 @@
 const { z } = require("zod");
 const fs = require("fs/promises");
 const path = require("path");
+const { Readable } = require("stream");
+const ExcelJS = require("exceljs");
 const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -144,6 +146,8 @@ const updateProduct = asyncHandler(async (req, res) => {
 // รูปภาพสินค้า
 // ---------------------------------------------------------------------
 
+// MySQL ห้าม trigger แก้ตารางเดียวกับที่มันผูกอยู่ (ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG)
+// เลยบังคับ "มีภาพหลักได้ภาพเดียวต่อสินค้า" ในโค้ดนี้แทน โดยปลดภาพหลักเดิมก่อนแล้วค่อย insert/update ในทรานแซกชันเดียวกัน
 const addProductImage = asyncHandler(async (req, res) => {
   await findProductOr404(req.params.id);
   if (!req.file) throw new AppError(400, "ບໍ່ມີໄຟລ໌ຮູບແນບມາ");
@@ -152,24 +156,54 @@ const addProductImage = asyncHandler(async (req, res) => {
   const isPrimary =
     req.body.isPrimary === "true" || req.body.isPrimary === true;
 
-  const [result] = await pool.query(
-    "INSERT INTO product_images (product_id, image_url, is_primary, uploaded_by) VALUES (?, ?, ?, ?)",
-    [req.params.id, imageUrl, isPrimary, req.user.sub],
-  );
-  const [rows] = await pool.query("SELECT * FROM product_images WHERE id = ?", [
-    result.insertId,
-  ]);
-  res.status(201).json(rows[0]);
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    if (isPrimary) {
+      await conn.query(
+        "UPDATE product_images SET is_primary = FALSE WHERE product_id = ?",
+        [req.params.id],
+      );
+    }
+    const [result] = await conn.query(
+      "INSERT INTO product_images (product_id, image_url, is_primary, uploaded_by) VALUES (?, ?, ?, ?)",
+      [req.params.id, imageUrl, isPrimary, req.user.sub],
+    );
+    await conn.commit();
+    const [rows] = await pool.query(
+      "SELECT * FROM product_images WHERE id = ?",
+      [result.insertId],
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 });
 
 const setPrimaryProductImage = asyncHandler(async (req, res) => {
-  // trigger trg_one_primary_image_update จัดการปลดภาพหลักเดิมให้อัตโนมัติ
-  const [result] = await pool.query(
-    "UPDATE product_images SET is_primary = TRUE WHERE id = ? AND product_id = ?",
-    [req.params.imageId, req.params.id],
-  );
-  if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບຮູບພາບນີ້");
-  res.status(204).send();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query(
+      "UPDATE product_images SET is_primary = FALSE WHERE product_id = ? AND id <> ?",
+      [req.params.id, req.params.imageId],
+    );
+    const [result] = await conn.query(
+      "UPDATE product_images SET is_primary = TRUE WHERE id = ? AND product_id = ?",
+      [req.params.imageId, req.params.id],
+    );
+    if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບຮູບພາບນີ້");
+    await conn.commit();
+    res.status(204).send();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 });
 
 const deleteProductImage = asyncHandler(async (req, res) => {
@@ -202,6 +236,234 @@ const deleteProduct = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
+const bulkDeleteSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+});
+
+// ลบทีละหลายรายการ — แต่ละ id ที่ลบไม่ได้ (มีประวัติผูกอยู่) จะข้ามไปแล้วบันทึกเป็น error
+// ไม่ทำให้รายการอื่นที่ลบได้พลอยลบไม่สำเร็จไปด้วย
+const bulkDeleteProducts = asyncHandler(async (req, res) => {
+  const { ids } = bulkDeleteSchema.parse(req.body);
+
+  const deleted = [];
+  const errors = [];
+  for (const id of ids) {
+    try {
+      const [result] = await pool.query("DELETE FROM products WHERE id = ?", [id]);
+      if (result.affectedRows) deleted.push(id);
+      else errors.push({ id, message: "ບໍ່ພົບສິນຄ້ານີ້" });
+    } catch (err) {
+      if (err.code === "ER_ROW_IS_REFERENCED_2") {
+        errors.push({ id, message: "ລຶບບໍ່ໄດ້ ເນື່ອງຈາກມີປະຫວັດການນຳໃຊ້ຢູ່ແລ້ວ" });
+      } else {
+        errors.push({ id, message: err.message });
+      }
+    }
+  }
+
+  res.json({ deleted, errors });
+});
+
+// ---------------------------------------------------------------------
+// ນຳເຂົ້າສິນຄ້າຈຳນວນຫຼາຍພ້ອມກັນຈາກໄຟລ໌ Excel
+// ---------------------------------------------------------------------
+
+// header ในแถวแรกของไฟล์ Excel -> field key ที่เราใช้ภายใน (รองรับทั้งภาษาลาวและอังกฤษ)
+const IMPORT_HEADER_ALIASES = {
+  sku: "sku",
+  "ຊື່ສິນຄ້າ (ລາວ)": "nameLo",
+  "ຊື່ (ລາວ)": "nameLo",
+  name: "nameLo",
+  "ຊື່ສິນຄ້າ (ຈີນ)": "nameCn",
+  "ຊື່ (ຈີນ)": "nameCn",
+  ບາໂຄດ: "barcode",
+  barcode: "barcode",
+  ຮຸ່ນ: "modelNo",
+  model: "modelNo",
+  ຂະໜາດ: "size",
+  size: "size",
+  ໝວດໝູ່: "categoryName",
+  category: "categoryName",
+  ໜ່ວຍ: "unitLo",
+  unit: "unitLo",
+  ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ: "reorderPoint",
+  "reorder point": "reorderPoint",
+};
+
+// normalize รูปแบบ unicode (NFC) + ตัดช่องว่างพิเศษ (non-breaking space, zero-width) ออก
+// เพราะไฟล์ที่ผ่าน Excel/WPS มาอาจเก็บตัวอักษรลาว/ช่องว่างคนละรูปแบบกับที่เราพิมพ์ในโค้ด
+const INVISIBLE_CODES = [0x00A0, 0x200B, 0x200C, 0x200D, 0xFEFF];
+const INVISIBLE_CHARS_RE = new RegExp(
+  "[" + INVISIBLE_CODES.map((c) => String.fromCharCode(c)).join("") + "]",
+  "g"
+);
+
+function normalizeHeader(value) {
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(INVISIBLE_CHARS_RE, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function cellText(cell) {
+  const value = cell.value;
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object" && "text" in value) return String(value.text).trim();
+  if (typeof value === "object" && "richText" in value) {
+    return value.richText.map((r) => r.text).join("").trim();
+  }
+  return String(value).trim();
+}
+
+// ดาวน์โหลดแบบฟอร์ม Excel เปล่าพร้อม header + ตัวอย่าง 1 แถว ให้ผู้ใช้กรอกแล้วนำเข้ากลับมา
+const getImportTemplate = asyncHandler(async (req, res) => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Products");
+  sheet.columns = [
+    { header: "SKU", key: "sku", width: 15 },
+    { header: "ຊື່ສິນຄ້າ (ລາວ)", key: "nameLo", width: 30 },
+    { header: "ຊື່ສິນຄ້າ (ຈີນ)", key: "nameCn", width: 25 },
+    { header: "ບາໂຄດ", key: "barcode", width: 15 },
+    { header: "ຮຸ່ນ", key: "modelNo", width: 15 },
+    { header: "ຂະໜາດ", key: "size", width: 15 },
+    { header: "ໝວດໝູ່", key: "categoryName", width: 20 },
+    { header: "ໜ່ວຍ", key: "unitLo", width: 10 },
+    { header: "ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ", key: "reorderPoint", width: 15 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  sheet.addRow({
+    sku: "ABC-001",
+    nameLo: "ຕົວຢ່າງສິນຄ້າ",
+    nameCn: "示例产品",
+    barcode: "",
+    modelNo: "",
+    size: "",
+    categoryName: "",
+    unitLo: "ອັນ",
+    reorderPoint: 10,
+  });
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader("Content-Disposition", 'attachment; filename="product-import-template.xlsx"');
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
+const NORMALIZED_HEADER_ALIASES = Object.fromEntries(
+  Object.entries(IMPORT_HEADER_ALIASES).map(([k, v]) => [normalizeHeader(k), v]),
+);
+
+// นำเข้า/อัปเดตสินค้าจากไฟล์ Excel — จับคู่ด้วย SKU: มีอยู่แล้วอัปเดต ไม่มีสร้างใหม่
+const bulkImportProducts = asyncHandler(async (req, res) => {
+  if (!req.file) throw new AppError(400, "ບໍ່ມີໄຟລ໌ແນບມາ");
+
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  let sheet;
+  if (ext === ".csv") {
+    const workbook = new ExcelJS.Workbook();
+    sheet = await workbook.csv.read(Readable.from(req.file.buffer));
+  } else {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+    sheet = workbook.worksheets[0];
+  }
+  if (!sheet) throw new AppError(400, "ບໍ່ພົບຊີດຂໍ້ມູນໃນໄຟລ໌");
+
+  const columnFieldMap = {};
+  const detectedHeaders = [];
+  sheet.getRow(1).eachCell((cell, colNumber) => {
+    const rawHeader = cellText(cell);
+    if (rawHeader) detectedHeaders.push(rawHeader);
+    const key = NORMALIZED_HEADER_ALIASES[normalizeHeader(rawHeader)];
+    if (key) columnFieldMap[colNumber] = key;
+  });
+
+  const mappedFields = new Set(Object.values(columnFieldMap));
+  if (!mappedFields.has("sku") || !mappedFields.has("nameLo")) {
+    throw new AppError(
+      400,
+      `ໄຟລ໌ Excel ຕ້ອງມີຄໍລໍາ SKU ແລະ ຊື່ສິນຄ້າ (ລາວ) ຢ່າງໜ້ອຍ — ກະລຸນາໃຊ້ແບບຟອມທີ່ດາວໂຫຼດໄວ້. ຄໍລໍາທີ່ພົບໃນໄຟລ໌: ${detectedHeaders.join(", ") || "(ບໍ່ພົບ header ເລີຍ)"}`,
+    );
+  }
+
+  const [categories] = await pool.query("SELECT id, name_lo FROM categories");
+  const categoryByName = new Map(categories.map((c) => [normalizeHeader(c.name_lo), c.id]));
+
+  let created = 0;
+  let updated = 0;
+  const errors = [];
+
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber);
+    if (row.actualCellCount === 0) continue;
+
+    const data = {};
+    for (const [colNumber, fieldKey] of Object.entries(columnFieldMap)) {
+      data[fieldKey] = cellText(row.getCell(Number(colNumber)));
+    }
+
+    if (!data.sku) continue; // แถวว่างเปล่าจริงๆ ข้ามไปเงียบๆ
+
+    if (!data.nameLo || !data.unitLo) {
+      errors.push({
+        row: rowNumber,
+        message: !data.nameLo ? "ບໍ່ມີຊື່ສິນຄ້າ (ລາວ)" : "ບໍ່ມີໜ່ວຍ",
+      });
+      continue;
+    }
+
+    let categoryId = null;
+    if (data.categoryName) {
+      categoryId = categoryByName.get(normalizeHeader(data.categoryName)) ?? null;
+      if (!categoryId) {
+        errors.push({ row: rowNumber, message: `ບໍ່ພົບໝວດໝູ່ "${data.categoryName}" — ບັນທຶກໂດຍບໍ່ລະບຸໝວດໝູ່` });
+      }
+    }
+
+    const reorderPoint = data.reorderPoint ? Number(data.reorderPoint) || 0 : 0;
+
+    try {
+      const [existing] = await pool.query("SELECT id FROM products WHERE sku = ?", [data.sku]);
+      await pool.query(
+        `INSERT INTO products
+          (sku, barcode, name_lo, name_cn, model_no, size, category_id, unit_lo, reorder_point)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           barcode = VALUES(barcode),
+           name_lo = VALUES(name_lo),
+           name_cn = VALUES(name_cn),
+           model_no = VALUES(model_no),
+           size = VALUES(size),
+           category_id = VALUES(category_id),
+           unit_lo = VALUES(unit_lo),
+           reorder_point = VALUES(reorder_point)`,
+        [
+          data.sku,
+          data.barcode || null,
+          data.nameLo,
+          data.nameCn || null,
+          data.modelNo || null,
+          data.size || null,
+          categoryId,
+          data.unitLo,
+          reorderPoint,
+        ]
+      );
+      if (existing.length) updated++;
+      else created++;
+    } catch (err) {
+      errors.push({ row: rowNumber, message: err.message });
+    }
+  }
+
+  res.json({ created, updated, errors });
+});
+
 module.exports = {
   listProducts,
   getProduct,
@@ -212,4 +474,7 @@ module.exports = {
   addProductImage,
   setPrimaryProductImage,
   deleteProductImage,
+  getImportTemplate,
+  bulkImportProducts,
+  bulkDeleteProducts,
 };

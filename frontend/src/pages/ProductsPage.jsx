@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { listProducts, createProduct, updateProduct, deleteProduct } from "../api/products";
+import {
+  listProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  bulkImportProducts,
+  bulkDeleteProducts,
+  downloadImportTemplate,
+} from "../api/products";
 import { listCategories } from "../api/catalog";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Upload, Download } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
@@ -32,6 +40,10 @@ export default function ProductsPage() {
   const [categoryId, setCategoryId] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [importResult, setImportResult] = useState(null);
+  const [deleteResult, setDeleteResult] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const fileInputRef = useRef(null);
 
   const canManage = hasRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER");
 
@@ -87,6 +99,40 @@ export default function ProductsPage() {
     if (result.isConfirmed) deleteMutation.mutate(p.id);
   };
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: bulkDeleteProducts,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      setSelectedIds(new Set());
+      setDeleteResult(result);
+    },
+    onError: (err) => toastError(apiErrorMessage(err)),
+  });
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!data?.length) return;
+    setSelectedIds((prev) =>
+      prev.size === data.length ? new Set() : new Set(data.map((p) => p.id)),
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    const result = await confirmAction({
+      title: `ລຶບ ${selectedIds.size} ລາຍການທີ່ເລືອກ?`,
+      text: "ລຶບໄດ້ສະເພາະສິນຄ້າທີ່ຍັງບໍ່ເຄີຍມີປະຫວັດຮັບເຂົ້າ/ເບີກຈ່າຍ ລາຍການທີ່ເຄີຍມີແລ້ວຈະຖືກຂ້າມໄປ",
+    });
+    if (result.isConfirmed) bulkDeleteMutation.mutate([...selectedIds]);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     createMutation.mutate({
@@ -96,12 +142,64 @@ export default function ProductsPage() {
     });
   };
 
+  const importMutation = useMutation({
+    mutationFn: bulkImportProducts,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      setImportResult(result);
+    },
+    onError: (err) => toastError(apiErrorMessage(err)),
+  });
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    importMutation.mutate(file);
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await downloadImportTemplate();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "product-import-template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toastError(apiErrorMessage(err));
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">ສິນຄ້າ</h2>
         {canManage && (
-          <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມສິນຄ້າ</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={handleDownloadTemplate}>
+              <Download size={15} /> ດາວໂຫຼດແບບຟอร์ม
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
+              <Upload size={15} />
+              {importMutation.isPending
+                ? "ກຳລັງນຳເຂົ້າ..."
+                : "ນຳເຂົ້າຈາກ Excel/CSV"}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມສິນຄ້າ</Button>
+          </div>
         )}
       </div>
 
@@ -126,19 +224,49 @@ export default function ProductsPage() {
         </select>
       </div>
 
+      {canManage && selectedIds.size > 0 && (
+        <div className="flex items-center justify-between mb-4 px-4 py-2.5 rounded-lg bg-blue-50 text-blue-700 text-sm">
+          <span>ເລືອກແລ້ວ {selectedIds.size} ລາຍການ</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-blue-600 hover:underline"
+            >
+              ຍົກເລີກການເລືອກ
+            </button>
+            <Button
+              variant="danger"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              <Trash2 size={15} /> ລຶບທີ່ເລືອກ
+            </Button>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <Spinner />
       ) : (
         <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
           <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              <th className="px-4 py-3"></th>
+              {canManage && (
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={!!data?.length && selectedIds.size === data.length}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
+              )}
+              <th className="px-4 py-3">ຮູບພາບ</th>
               <th className="px-4 py-3">SKU</th>
               <th className="px-4 py-3">ຊື່ສິນຄ້າ</th>
               <th className="px-4 py-3">ໝວດໝູ່</th>
               <th className="px-4 py-3">ໜ່ວຍ</th>
               <th className="px-4 py-3">ສະຖານະ</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3 text-right">ການຈັດການ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -148,6 +276,18 @@ export default function ProductsPage() {
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => navigate(`/products/${p.id}`)}
               >
+                {canManage && (
+                  <td
+                    className="px-4 py-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => toggleSelected(p.id)}
+                    />
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   {p.primary_image_url ? (
                     <img
@@ -173,9 +313,16 @@ export default function ProductsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleActiveMutation.mutate({ id: p.id, isActive: !p.is_active });
+                        toggleActiveMutation.mutate({
+                          id: p.id,
+                          isActive: !p.is_active,
+                        });
                       }}
-                      className={p.is_active ? "text-emerald-600 hover:underline" : "text-red-500 hover:underline"}
+                      className={
+                        p.is_active
+                          ? "text-emerald-600 hover:underline"
+                          : "text-red-500 hover:underline"
+                      }
                     >
                       {p.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ"}
                     </button>
@@ -215,7 +362,10 @@ export default function ProductsPage() {
             ))}
             {!data?.length && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                <td
+                  colSpan={canManage ? 8 : 7}
+                  className="px-4 py-8 text-center text-gray-400"
+                >
                   ບໍ່ພົບສິນຄ້າ
                 </td>
               </tr>
@@ -321,6 +471,73 @@ export default function ProductsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!importResult}
+        title="ຜົນການນຳເຂົ້າສິນຄ້າ"
+        onClose={() => setImportResult(null)}
+      >
+        {importResult && (
+          <div className="space-y-3">
+            <div className="flex gap-4 text-sm">
+              <div className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700">
+                ສ້າງໃໝ່: <strong>{importResult.created}</strong>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-blue-50 text-blue-700">
+                ອັບເດດ: <strong>{importResult.updated}</strong>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-red-50 text-red-700">
+                ຜິດພາດ: <strong>{importResult.errors.length}</strong>
+              </div>
+            </div>
+            {importResult.errors.length > 0 && (
+              <div className="max-h-48 overflow-y-auto text-sm border border-gray-100 rounded-lg divide-y divide-gray-100">
+                {importResult.errors.map((e, i) => (
+                  <div key={i} className="px-3 py-2">
+                    <span className="text-gray-400">ແຖວ {e.row}:</span>{" "}
+                    <span className="text-red-600">{e.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => setImportResult(null)}>ປິດ</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!deleteResult}
+        title="ຜົນການລຶບສິນຄ້າ"
+        onClose={() => setDeleteResult(null)}
+      >
+        {deleteResult && (
+          <div className="space-y-3">
+            <div className="flex gap-4 text-sm">
+              <div className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700">
+                ລຶບສຳເລັດ: <strong>{deleteResult.deleted.length}</strong>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-red-50 text-red-700">
+                ລຶບບໍ່ໄດ້: <strong>{deleteResult.errors.length}</strong>
+              </div>
+            </div>
+            {deleteResult.errors.length > 0 && (
+              <div className="max-h-48 overflow-y-auto text-sm border border-gray-100 rounded-lg divide-y divide-gray-100">
+                {deleteResult.errors.map((e, i) => (
+                  <div key={i} className="px-3 py-2">
+                    <span className="text-gray-400">ID {e.id}:</span>{" "}
+                    <span className="text-red-600">{e.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => setDeleteResult(null)}>ປິດ</Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

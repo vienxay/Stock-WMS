@@ -203,27 +203,8 @@ CREATE TABLE product_images (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- MySQL ไม่รองรับ partial unique index (WHERE is_primary = TRUE) แบบ PostgreSQL
--- ใช้ trigger บังคับแทน: เมื่อตั้งภาพใดเป็นภาพหลัก ให้ปลดภาพอื่นของสินค้าเดียวกันออกอัตโนมัติ
-DELIMITER $$
-CREATE TRIGGER trg_one_primary_image
-BEFORE INSERT ON product_images
-FOR EACH ROW
-BEGIN
-    IF NEW.is_primary = TRUE THEN
-        UPDATE product_images SET is_primary = FALSE WHERE product_id = NEW.product_id;
-    END IF;
-END$$
-
-CREATE TRIGGER trg_one_primary_image_update
-BEFORE UPDATE ON product_images
-FOR EACH ROW
-BEGIN
-    IF NEW.is_primary = TRUE THEN
-        UPDATE product_images SET is_primary = FALSE
-            WHERE product_id = NEW.product_id AND id <> NEW.id;
-    END IF;
-END$$
-DELIMITER ;
+-- และ trigger ก็ทำ UPDATE ตารางเดียวกับที่ trigger ผูกอยู่ไม่ได้ (ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG)
+-- จึงบังคับ "มีภาพหลักได้แค่ 1 ภาพต่อสินค้า" ที่ชั้น application (ดู productsController.js) แทน
 
 -- ยอดคงเหลือปัจจุบัน แยกตามคลัง (คำนวณ/sync จาก stock_movements)
 CREATE TABLE stock_balance (

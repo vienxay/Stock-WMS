@@ -31,4 +31,28 @@ const uploadProductImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-module.exports = { uploadProductImage };
+// ไฟล์ Excel/CSV นำเข้าข้อมูล — เก็บใน memory เพราะแค่ parse แล้วทิ้ง ไม่ต้องเก็บไฟล์ดิบไว้
+// เช็คทั้ง mimetype และนามสกุลไฟล์ เพราะเบราว์เซอร์/OS แต่ละเครื่องส่ง mimetype ของ .csv มาไม่ตรงกัน
+// (บางทีเป็น text/csv, บางทีเป็น application/vnd.ms-excel เหมือน .xls)
+const EXCEL_MIME = [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "text/csv",
+  "application/csv",
+  "text/plain",
+];
+const ALLOWED_IMPORT_EXT = [".xlsx", ".xls", ".csv"];
+
+const uploadExcelFile = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_IMPORT_EXT.includes(ext) && !EXCEL_MIME.includes(file.mimetype)) {
+      return cb(new AppError(400, "ຮອງຮັບສະເພາະໄຟລ໌ Excel (.xlsx) ຫຼື CSV (.csv)"));
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
+
+module.exports = { uploadProductImage, uploadExcelFile };

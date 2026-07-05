@@ -22,7 +22,7 @@ export default function LoginPage() {
     queryFn: getSettings,
     retry: false,
   });
-  const companyName = settings?.company_name || "Stock WMS";
+  const companyName = settings?.company_name_lo || settings?.company_name || "Stock WMS";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

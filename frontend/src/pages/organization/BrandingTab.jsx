@@ -20,11 +20,15 @@ export default function BrandingTab() {
   });
 
   const [companyName, setCompanyName] = useState("");
+  const [companyNameLo, setCompanyNameLo] = useState("");
   const logoInputRef = useRef(null);
   const backgroundInputRef = useRef(null);
 
   useEffect(() => {
-    if (settings) setCompanyName(settings.company_name);
+    if (settings) {
+      setCompanyName(settings.company_name);
+      setCompanyNameLo(settings.company_name_lo || "");
+    }
   }, [settings]);
 
   const invalidate = () =>
@@ -59,7 +63,7 @@ export default function BrandingTab() {
 
   const handleSaveName = (e) => {
     e.preventDefault();
-    updateMutation.mutate({ companyName });
+    updateMutation.mutate({ companyName, companyNameLo });
   };
 
   const handleLogoFile = (e) => {
@@ -79,7 +83,7 @@ export default function BrandingTab() {
   return (
     <div className="max-w-xl space-y-8">
       <form onSubmit={handleSaveName}>
-        <FormField label="ຊື່ບໍລິສັດ/ອົງກອນ (ສະແດງໃນໜ້າ login ແລະ sidebar)">
+        <FormField label="ຊື່ບໍລິສັດ/ອົງກອນ (ຄ່າເລີ່ມຕົ້ນ)">
           <input
             className={inputClass}
             value={companyName}
@@ -87,6 +91,17 @@ export default function BrandingTab() {
             required
           />
         </FormField>
+        <FormField label="ຊື່ບໍລິສັດ/ອົງກອນ (ພາສາລາວ) — ຖ້າໃສ່ໄວ້ຈະໃຊ້ແທນຊື່ຂ້າງເທິງ">
+          <input
+            className={inputClass}
+            value={companyNameLo}
+            onChange={(e) => setCompanyNameLo(e.target.value)}
+            placeholder="ຕົວຢ່າງ: ບໍລິສັດ ຊາໄບດີ ຈຳກັດ"
+          />
+        </FormField>
+        <p className="text-xs text-gray-400 -mt-2 mb-4">
+          ຊື່ທັງສອງນີ້ຈະສະແດງໃນໜ້າ login ແລະ sidebar
+        </p>
         <Button type="submit" disabled={updateMutation.isPending}>
           ບັນທຶກຊື່
         </Button>

@@ -431,6 +431,7 @@ CREATE INDEX idx_product_images_product ON product_images(product_id);
 CREATE TABLE app_settings (
     id                      INT PRIMARY KEY DEFAULT 1,
     company_name            VARCHAR(200) NOT NULL DEFAULT 'Stock WMS',
+    company_name_lo         VARCHAR(200),
     logo_url                VARCHAR(500),
     login_background_url    VARCHAR(500),
     updated_by              INT,

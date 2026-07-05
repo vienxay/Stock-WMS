@@ -7,6 +7,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 const updateSettingsSchema = z.object({
   companyName: z.string().min(1).max(200),
+  companyNameLo: z.string().max(200).optional().nullable(),
 });
 
 async function getSettingsRow() {
@@ -34,8 +35,8 @@ const getSettings = asyncHandler(async (req, res) => {
 const updateSettings = asyncHandler(async (req, res) => {
   const body = updateSettingsSchema.parse(req.body);
   await pool.query(
-    "UPDATE app_settings SET company_name = ?, updated_by = ? WHERE id = 1",
-    [body.companyName, req.user.sub],
+    "UPDATE app_settings SET company_name = ?, company_name_lo = ?, updated_by = ? WHERE id = 1",
+    [body.companyName, body.companyNameLo || null, req.user.sub],
   );
   res.json(await getSettingsRow());
 });

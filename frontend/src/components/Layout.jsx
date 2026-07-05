@@ -82,7 +82,7 @@ export default function Layout() {
                 ລະບົບສາງສິນຄ້າ
               </div>
               <div className="text-slate-400 text-xs truncate">
-                {settings?.company_name || "Stock WMS"}
+                {settings?.company_name_lo || settings?.company_name || "Stock WMS"}
               </div>
             </div>
           )}

@@ -2,7 +2,7 @@
 // และสร้างบัญชี SYSTEM_ADMIN คนแรกไว้ล็อกอินเข้าใช้งานครั้งแรก
 // รัน: npm run seed:admin (ต้องรัน schemaMySQL.sql ให้ตารางครบก่อน)
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env'), quiet: true });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');

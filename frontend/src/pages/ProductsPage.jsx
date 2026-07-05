@@ -265,6 +265,7 @@ export default function ProductsPage() {
               <th className="px-4 py-3">ຊື່ສິນຄ້າ</th>
               <th className="px-4 py-3">ໝວດໝູ່</th>
               <th className="px-4 py-3">ໜ່ວຍ</th>
+              <th className="px-4 py-3">ຈຳນວນຄົງເຫຼືອ</th>
               <th className="px-4 py-3">ສະຖານະ</th>
               <th className="px-4 py-3 text-right">ການຈັດການ</th>
             </tr>
@@ -308,6 +309,18 @@ export default function ProductsPage() {
                 </td>
                 <td className="px-4 py-3">{p.category_name || "-"}</td>
                 <td className="px-4 py-3">{p.unit_lo}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={
+                      Number(p.reorder_point) > 0 &&
+                      Number(p.total_quantity) <= Number(p.reorder_point)
+                        ? "text-red-600 font-medium"
+                        : "text-gray-700"
+                    }
+                  >
+                    {p.total_quantity}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   {canManage ? (
                     <button
@@ -363,7 +376,7 @@ export default function ProductsPage() {
             {!data?.length && (
               <tr>
                 <td
-                  colSpan={canManage ? 8 : 7}
+                  colSpan={canManage ? 9 : 8}
                   className="px-4 py-8 text-center text-gray-400"
                 >
                   ບໍ່ພົບສິນຄ້າ
@@ -447,7 +460,7 @@ export default function ProductsPage() {
               required
             />
           </FormField>
-          <FormField label="ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ (Reorder point)">
+          <FormField label="ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ">
             <input
               type="number"
               step="0.01"

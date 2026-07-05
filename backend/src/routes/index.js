@@ -10,10 +10,12 @@ const branchRequestsRoutes = require("./branchRequestsRoutes");
 const requisitionsRoutes = require("./requisitionsRoutes");
 const stockTakesRoutes = require("./stockTakesRoutes");
 const reportsRoutes = require("./reportsRoutes");
+const settingsRoutes = require("./settingsRoutes");
 
 const router = express.Router();
 
 router.use("/auth", authRoutes);
+router.use("/settings", settingsRoutes);
 router.use("/organization", organizationRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/", currencyRoutes); // /currencies, /exchange-rates

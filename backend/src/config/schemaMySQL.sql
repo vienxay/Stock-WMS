@@ -424,3 +424,18 @@ CREATE INDEX idx_requisitions_status ON requisitions(status);
 CREATE INDEX idx_branch_requests_status ON branch_requests(status);
 CREATE INDEX idx_exchange_rates_lookup ON exchange_rates(currency_code, effective_date);
 CREATE INDEX idx_product_images_product ON product_images(product_id);
+
+-- ---------------------------------------------------------------------
+-- ตั้งค่าระบบ (ยี่ห้อ) — มีแถวเดียวเสมอ (id = 1) เก็บชื่อ/โลโก้/ภาพพื้นหลังหน้า login
+-- ---------------------------------------------------------------------
+CREATE TABLE app_settings (
+    id                      INT PRIMARY KEY DEFAULT 1,
+    company_name            VARCHAR(200) NOT NULL DEFAULT 'Stock WMS',
+    logo_url                VARCHAR(500),
+    login_background_url    VARCHAR(500),
+    updated_by              INT,
+    updated_at              DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO app_settings (id, company_name) VALUES (1, 'Stock WMS');

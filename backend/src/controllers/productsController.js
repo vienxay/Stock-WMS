@@ -59,7 +59,11 @@ const listProducts = asyncHandler(async (req, res) => {
 
   const [rows] = await pool.query(
     `SELECT p.*, c.name_lo AS category_name,
-            pi.image_url AS primary_image_url
+            pi.image_url AS primary_image_url,
+            COALESCE(
+              (SELECT SUM(sb.quantity) FROM stock_balance sb WHERE sb.product_id = p.id),
+              0
+            ) AS total_quantity
      FROM products p
      LEFT JOIN categories c ON c.id = p.category_id
      LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = TRUE
@@ -286,7 +290,8 @@ const IMPORT_HEADER_ALIASES = {
   category: "categoryName",
   ໜ່ວຍ: "unitLo",
   unit: "unitLo",
-  ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ: "reorderPoint",
+  ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ: "reorderPoint", // ชื่อเดิม เก็บไว้ให้ไฟล์เก่ายังใช้ได้
+  ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ: "reorderPoint",
   "reorder point": "reorderPoint",
 };
 
@@ -330,7 +335,7 @@ const getImportTemplate = asyncHandler(async (req, res) => {
     { header: "ຂະໜາດ", key: "size", width: 15 },
     { header: "ໝວດໝູ່", key: "categoryName", width: 20 },
     { header: "ໜ່ວຍ", key: "unitLo", width: 10 },
-    { header: "ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ", key: "reorderPoint", width: 15 },
+    { header: "ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ", key: "reorderPoint", width: 22 },
   ];
   sheet.getRow(1).font = { bold: true };
   sheet.addRow({

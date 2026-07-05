@@ -105,7 +105,11 @@ export default function ProductDetailPage() {
 
   const handleSave = (e) => {
     e.preventDefault()
-    updateMutation.mutate({ ...form, categoryId: form.categoryId ? Number(form.categoryId) : null })
+    updateMutation.mutate({
+      ...form,
+      categoryId: form.categoryId ? Number(form.categoryId) : null,
+      reorderPoint: Number(form.reorderPoint) || 0,
+    })
   }
 
   const handleFileChange = (e) => {
@@ -226,7 +230,7 @@ export default function ProductDetailPage() {
                   required
                 />
               </FormField>
-              <FormField label="ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ">
+              <FormField label="ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ">
                 <input
                   type="number"
                   step="0.01"
@@ -272,7 +276,7 @@ export default function ProductDetailPage() {
               <InfoRow icon={Package} label="ໜ່ວຍ">
                 {product.unit_lo}
               </InfoRow>
-              <InfoRow icon={AlertTriangle} label="ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ">
+              <InfoRow icon={AlertTriangle} label="ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ">
                 {product.reorder_point}
               </InfoRow>
             </div>

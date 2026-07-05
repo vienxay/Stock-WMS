@@ -3,4 +3,6 @@ backend/.env
 frontend/dist/
 backend/uploads/products/*
 !backend/uploads/products/.gitkeep
+backend/uploads/branding/*
+!backend/uploads/branding/.gitkeep
 backend/logs/

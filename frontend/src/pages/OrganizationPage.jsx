@@ -4,6 +4,7 @@ import WarehousesTab from "./organization/WarehousesTab";
 import DepartmentsTab from "./organization/DepartmentsTab";
 import EmployeesTab from "./organization/EmployeesTab";
 import UsersTab from "./organization/UsersTab";
+import BrandingTab from "./organization/BrandingTab";
 
 export default function OrganizationPage() {
   return (
@@ -20,6 +21,7 @@ export default function OrganizationPage() {
             label: "ຜູ້ໃຊ້ງານແລະສິດທິ",
             component: <UsersTab />,
           },
+          { key: "branding", label: "ຍີ່ຫໍ້/ໜ້າ Login", component: <BrandingTab /> },
         ]}
       />
     </div>

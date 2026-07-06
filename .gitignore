@@ -6,3 +6,4 @@ backend/uploads/products/*
 backend/uploads/branding/*
 !backend/uploads/branding/.gitkeep
 backend/logs/
+frontend/*.log

@@ -7,6 +7,7 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { partialUpdate } = require("../utils/dbHelpers");
+const { recordMovement } = require("../services/stockMovementService");
 
 const productSchema = z.object({
   sku: z.string().min(1).max(50),
@@ -236,7 +237,7 @@ const deleteProductImage = asyncHandler(async (req, res) => {
 // (แปลงเป็น 409 ให้อัตโนมัติที่ errorMiddleware) เพื่อไม่ให้ audit trail ขาดหาย
 const deleteProduct = asyncHandler(async (req, res) => {
   await findProductOr404(req.params.id);
-  await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
+  await pool.query("DELETE FROM products WHERE id = ?", [req.params.id]);
   res.status(204).send();
 });
 
@@ -253,12 +254,17 @@ const bulkDeleteProducts = asyncHandler(async (req, res) => {
   const errors = [];
   for (const id of ids) {
     try {
-      const [result] = await pool.query("DELETE FROM products WHERE id = ?", [id]);
+      const [result] = await pool.query("DELETE FROM products WHERE id = ?", [
+        id,
+      ]);
       if (result.affectedRows) deleted.push(id);
       else errors.push({ id, message: "ບໍ່ພົບສິນຄ້ານີ້" });
     } catch (err) {
       if (err.code === "ER_ROW_IS_REFERENCED_2") {
-        errors.push({ id, message: "ລຶບບໍ່ໄດ້ ເນື່ອງຈາກມີປະຫວັດການນຳໃຊ້ຢູ່ແລ້ວ" });
+        errors.push({
+          id,
+          message: "ລຶບບໍ່ໄດ້ ເນື່ອງຈາກມີປະຫວັດການນຳໃຊ້ຢູ່ແລ້ວ",
+        });
       } else {
         errors.push({ id, message: err.message });
       }
@@ -293,14 +299,19 @@ const IMPORT_HEADER_ALIASES = {
   ຈຸດສັ່ງຊື້ຂັ້ນຕ່ຳ: "reorderPoint", // ชื่อเดิม เก็บไว้ให้ไฟล์เก่ายังใช้ได้
   ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ: "reorderPoint",
   "reorder point": "reorderPoint",
+  ສາງ: "warehouseName",
+  warehouse: "warehouseName",
+  ຈຳນວນເລີ່ມຕົ້ນ: "initialQuantity",
+  "initial quantity": "initialQuantity",
+  quantity: "initialQuantity",
 };
 
 // normalize รูปแบบ unicode (NFC) + ตัดช่องว่างพิเศษ (non-breaking space, zero-width) ออก
 // เพราะไฟล์ที่ผ่าน Excel/WPS มาอาจเก็บตัวอักษรลาว/ช่องว่างคนละรูปแบบกับที่เราพิมพ์ในโค้ด
-const INVISIBLE_CODES = [0x00A0, 0x200B, 0x200C, 0x200D, 0xFEFF];
+const INVISIBLE_CODES = [0x00a0, 0x200b, 0x200c, 0x200d, 0xfeff];
 const INVISIBLE_CHARS_RE = new RegExp(
   "[" + INVISIBLE_CODES.map((c) => String.fromCharCode(c)).join("") + "]",
-  "g"
+  "g",
 );
 
 function normalizeHeader(value) {
@@ -315,9 +326,13 @@ function normalizeHeader(value) {
 function cellText(cell) {
   const value = cell.value;
   if (value === null || value === undefined) return "";
-  if (typeof value === "object" && "text" in value) return String(value.text).trim();
+  if (typeof value === "object" && "text" in value)
+    return String(value.text).trim();
   if (typeof value === "object" && "richText" in value) {
-    return value.richText.map((r) => r.text).join("").trim();
+    return value.richText
+      .map((r) => r.text)
+      .join("")
+      .trim();
   }
   return String(value).trim();
 }
@@ -336,6 +351,8 @@ const getImportTemplate = asyncHandler(async (req, res) => {
     { header: "ໝວດໝູ່", key: "categoryName", width: 20 },
     { header: "ໜ່ວຍ", key: "unitLo", width: 10 },
     { header: "ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ", key: "reorderPoint", width: 22 },
+    { header: "ຄັງ", key: "warehouseName", width: 25 },
+    { header: "ຈຳນວນເລີ່ມຕົ້ນ", key: "initialQuantity", width: 15 },
   ];
   sheet.getRow(1).font = { bold: true };
   sheet.addRow({
@@ -348,19 +365,27 @@ const getImportTemplate = asyncHandler(async (req, res) => {
     categoryName: "",
     unitLo: "ອັນ",
     reorderPoint: 10,
+    warehouseName: "",
+    initialQuantity: "",
   });
 
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
-  res.setHeader("Content-Disposition", 'attachment; filename="product-import-template.xlsx"');
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="product-import-template.xlsx"',
+  );
   await workbook.xlsx.write(res);
   res.end();
 });
 
 const NORMALIZED_HEADER_ALIASES = Object.fromEntries(
-  Object.entries(IMPORT_HEADER_ALIASES).map(([k, v]) => [normalizeHeader(k), v]),
+  Object.entries(IMPORT_HEADER_ALIASES).map(([k, v]) => [
+    normalizeHeader(k),
+    v,
+  ]),
 );
 
 // นำเข้า/อัปเดตสินค้าจากไฟล์ Excel — จับคู่ด้วย SKU: มีอยู่แล้วอัปเดต ไม่มีสร้างใหม่
@@ -397,7 +422,13 @@ const bulkImportProducts = asyncHandler(async (req, res) => {
   }
 
   const [categories] = await pool.query("SELECT id, name_lo FROM categories");
-  const categoryByName = new Map(categories.map((c) => [normalizeHeader(c.name_lo), c.id]));
+  const categoryByName = new Map(
+    categories.map((c) => [normalizeHeader(c.name_lo), c.id]),
+  );
+  const [warehouses] = await pool.query("SELECT id, name FROM warehouses");
+  const warehouseByName = new Map(
+    warehouses.map((w) => [normalizeHeader(w.name), w.id]),
+  );
 
   let created = 0;
   let updated = 0;
@@ -424,17 +455,46 @@ const bulkImportProducts = asyncHandler(async (req, res) => {
 
     let categoryId = null;
     if (data.categoryName) {
-      categoryId = categoryByName.get(normalizeHeader(data.categoryName)) ?? null;
+      categoryId =
+        categoryByName.get(normalizeHeader(data.categoryName)) ?? null;
       if (!categoryId) {
-        errors.push({ row: rowNumber, message: `ບໍ່ພົບໝວດໝູ່ "${data.categoryName}" — ບັນທຶກໂດຍບໍ່ລະບຸໝວດໝູ່` });
+        errors.push({
+          row: rowNumber,
+          message: `ບໍ່ພົບໝວດໝູ່ "${data.categoryName}" — ບັນທຶກໂດຍບໍ່ລະບຸໝວດໝູ່`,
+        });
       }
     }
 
     const reorderPoint = data.reorderPoint ? Number(data.reorderPoint) || 0 : 0;
+    const initialQuantity = data.initialQuantity
+      ? Number(data.initialQuantity) || 0
+      : 0;
+
+    let warehouseId = null;
+    if (initialQuantity > 0) {
+      if (!data.warehouseName) {
+        errors.push({
+          row: rowNumber,
+          message: "ມີຈຳນວນເລີ່ມຕົ້ນແຕ່ບໍ່ໄດ້ລະບຸຄັງ — ຂ້າມການລົງສະຕັອກ",
+        });
+      } else {
+        warehouseId =
+          warehouseByName.get(normalizeHeader(data.warehouseName)) ?? null;
+        if (!warehouseId) {
+          errors.push({
+            row: rowNumber,
+            message: `ບໍ່ພົບຄັງ "${data.warehouseName}" — ຂ້າມການລົງສະຕັອກ`,
+          });
+        }
+      }
+    }
 
     try {
-      const [existing] = await pool.query("SELECT id FROM products WHERE sku = ?", [data.sku]);
-      await pool.query(
+      const [existing] = await pool.query(
+        "SELECT id FROM products WHERE sku = ?",
+        [data.sku],
+      );
+      const [result] = await pool.query(
         `INSERT INTO products
           (sku, barcode, name_lo, name_cn, model_no, size, category_id, unit_lo, reorder_point)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -457,10 +517,42 @@ const bulkImportProducts = asyncHandler(async (req, res) => {
           categoryId,
           data.unitLo,
           reorderPoint,
-        ]
+        ],
       );
+      const productId = existing.length ? existing[0].id : result.insertId;
       if (existing.length) updated++;
       else created++;
+
+      if (warehouseId) {
+        try {
+          const conn = await pool.getConnection();
+          try {
+            await conn.beginTransaction();
+            await recordMovement(conn, {
+              productId,
+              warehouseId,
+              movementType: "ADJUSTMENT",
+              quantity: initialQuantity,
+              unitValueLak: 0,
+              referenceTable: "products",
+              referenceId: productId,
+              note: "ນຳເຂົ້າຈຳນວນເລີ່ມຕົ້ນຈາກໄຟລ໌ Excel/CSV",
+              createdBy: req.user.sub,
+            });
+            await conn.commit();
+          } catch (err) {
+            await conn.rollback();
+            throw err;
+          } finally {
+            conn.release();
+          }
+        } catch (err) {
+          errors.push({
+            row: rowNumber,
+            message: `ລົງສະຕັອກເລີ່ມຕົ້ນບໍ່ໄດ້: ${err.message}`,
+          });
+        }
+      }
     } catch (err) {
       errors.push({ row: rowNumber, message: err.message });
     }

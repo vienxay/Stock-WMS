@@ -9,6 +9,10 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
 
+// เชื่อ proxy ชั้นเดียว (Vite dev proxy / ngrok tunnel) เพื่อให้ express-rate-limit
+// อ่าน X-Forwarded-For แล้วระบุ IP ผู้ใช้จริงได้ถูกต้อง แทนที่จะเห็นเป็น IP เดียวกันหมด
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json());

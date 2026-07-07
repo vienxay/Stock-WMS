@@ -6,7 +6,7 @@ const ctrl = require("../controllers/settingsController");
 
 const router = express.Router();
 
-const requireAdmin = [authMiddleware, requireRole("SYSTEM_ADMIN")];
+const requireAdmin = [authMiddleware, requireRole()];
 
 // เปิดสาธารณะ ไม่ต้อง login เพราะหน้า login ต้องใช้ค่านี้แสดงชื่อ/โลโก้/ภาพพื้นหลังก่อนเข้าสู่ระบบ
 router.get("/", ctrl.getSettings);

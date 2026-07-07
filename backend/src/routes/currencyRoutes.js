@@ -11,7 +11,7 @@ router.get("/currencies", ctrl.listCurrencies);
 router.get("/exchange-rates", ctrl.listExchangeRates);
 router.post(
   "/exchange-rates",
-  requireRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.createExchangeRate,
 );
 

@@ -4,6 +4,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { getRateToBase } = require("../services/exchangeRateService");
 const { recordMovement } = require("../services/stockMovementService");
+const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
 
 const receiptItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -56,6 +57,10 @@ const getReceipt = asyncHandler(async (req, res) => {
 // รับสินค้าเข้าได้เฉพาะคลังส่วนกลาง (is_central = TRUE) เท่านั้น ตามกติกาของระบบ
 const createReceipt = asyncHandler(async (req, res) => {
   const body = createReceiptSchema.parse(req.body);
+
+  if (!(await userCanAccessWarehouse(req.user, body.warehouseId))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິຮັບສິນຄ້າເຂົ້າຄັງນີ້");
+  }
 
   const conn = await pool.getConnection();
   try {

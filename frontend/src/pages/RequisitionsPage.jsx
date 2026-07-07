@@ -32,7 +32,7 @@ export default function RequisitionsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  const canCreate = hasRole("SYSTEM_ADMIN", "EMPLOYEE", "BRANCH_STORE_KEEPER");
+  const canCreate = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data, isLoading } = useQuery({
     queryKey: ["requisitions", { status }],
@@ -120,7 +120,7 @@ export default function RequisitionsPage() {
           <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
               <th className="px-4 py-3">ເລກທີ</th>
-              <th className="px-4 py-3">ຄັງ</th>
+              <th className="px-4 py-3">ສາງ</th>
               <th className="px-4 py-3">ຜູ້ຂໍເບີກ</th>
               <th className="px-4 py-3">ຈຸດປະສົງ</th>
               <th className="px-4 py-3">ສະຖານະ</th>
@@ -147,7 +147,7 @@ export default function RequisitionsPage() {
             {!data?.length && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  ບໍ່ພົບໃບເບີກ
+                  ບໍ່ເຫັນໃບເບີກ
                 </td>
               </tr>
             )}
@@ -164,7 +164,7 @@ export default function RequisitionsPage() {
       >
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormField label="ຄັງຕົ້ນທາງ (ຄັງຂອງໄຊທ໌ຕົນເອງ)">
+            <FormField label="ສາງຕົ້ນທາງ (ສາງຂອງໄຊທ໌ຕົນເອງ)">
               <select
                 className={selectClass}
                 value={form.warehouseId}

@@ -78,8 +78,7 @@ CREATE TABLE employees (
 
 CREATE TABLE roles (
     id              INT AUTO_INCREMENT PRIMARY KEY,
-    code            VARCHAR(30) UNIQUE NOT NULL,     -- 'SYSTEM_ADMIN','HQ_STORE_KEEPER','BRANCH_STORE_KEEPER',
-                                                       -- 'DEPT_APPROVER','HQ_APPROVER','EMPLOYEE'
+    code            VARCHAR(30) UNIQUE NOT NULL,     -- 'SUPER_ADMIN','BRANCH_ADMIN','WAREHOUSE_STAFF'
     name            VARCHAR(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -97,10 +96,13 @@ CREATE TABLE user_roles (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     user_id         INT NOT NULL,
     role_id         INT NOT NULL,
-    warehouse_id    INT NULL,                        -- NULL = สิทธิ์ทั่วทั้งระบบ, ระบุ = สิทธิ์เฉพาะคลังนั้น
-    UNIQUE KEY uq_user_role_warehouse (user_id, role_id, warehouse_id),
+    branch_id       INT NULL,                        -- ใช้กับ BRANCH_ADMIN: สิทธิ์ทุกคลังในสาขานี้
+    warehouse_id    INT NULL,                        -- ใช้กับ WAREHOUSE_STAFF: สิทธิ์เฉพาะคลังนี้
+                                                       -- ทั้งสอง NULL (พร้อมกับ role=SUPER_ADMIN) = สิทธิ์ทั่วทั้งระบบ
+    UNIQUE KEY uq_user_role_warehouse (user_id, role_id, branch_id, warehouse_id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (role_id) REFERENCES roles(id),
+    FOREIGN KEY (branch_id) REFERENCES branches(id),
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- หมายเหตุ: MySQL ไม่ยอมให้ NULL อยู่ใน PRIMARY KEY เลย (แม้ column จะประกาศเป็น NULL ได้)

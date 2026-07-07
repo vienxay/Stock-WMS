@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-const canManageCatalog = requireRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER");
+const canManageCatalog = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
 // ต้องมาก่อน "/:id" ไม่งั้น express จะจับ "import-template"/"bulk-import" เป็น :id
 router.get("/import-template", canManageCatalog, ctrl.getImportTemplate);

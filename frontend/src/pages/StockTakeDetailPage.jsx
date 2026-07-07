@@ -19,11 +19,7 @@ export default function StockTakeDetailPage() {
   const { hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const canCount = hasRole(
-    "SYSTEM_ADMIN",
-    "HQ_STORE_KEEPER",
-    "BRANCH_STORE_KEEPER",
-  );
+  const canCount = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data: stockTake, isLoading } = useQuery({
     queryKey: ["stock-take", id],

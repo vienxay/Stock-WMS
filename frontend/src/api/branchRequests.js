@@ -12,3 +12,5 @@ export const rejectBranchRequest = (id, body) =>
   apiClient.put(`/branch-requests/${id}/reject`, body).then((r) => r.data);
 export const transferBranchRequest = (id) =>
   apiClient.post(`/branch-requests/${id}/transfer`).then((r) => r.data);
+export const quickTransfer = (body) =>
+  apiClient.post("/branch-requests/quick-transfer", body).then((r) => r.data);

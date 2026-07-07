@@ -7,11 +7,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-const canCount = requireRole(
-  "SYSTEM_ADMIN",
-  "HQ_STORE_KEEPER",
-  "BRANCH_STORE_KEEPER",
-);
+const canCount = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
 router.get("/", ctrl.listStockTakes);
 router.get("/:id", ctrl.getStockTake);

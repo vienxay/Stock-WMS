@@ -101,7 +101,7 @@ export default function Layout() {
               {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           ))}
-          {hasRole("SYSTEM_ADMIN") && (
+          {hasRole("SUPER_ADMIN") && (
             <>
               {!collapsed && (
                 <div className="pt-4 pb-1 px-3 text-xs font-semibold text-slate-500 uppercase">

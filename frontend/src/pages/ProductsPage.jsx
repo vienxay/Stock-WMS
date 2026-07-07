@@ -45,7 +45,7 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const fileInputRef = useRef(null);
 
-  const canManage = hasRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER");
+  const canManage = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data, isLoading } = useQuery({
     queryKey: ["products", { q, categoryId }],

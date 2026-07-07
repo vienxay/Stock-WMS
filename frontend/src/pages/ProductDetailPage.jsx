@@ -36,7 +36,7 @@ export default function ProductDetailPage() {
   const queryClient = useQueryClient()
   const fileInputRef = useRef(null)
 
-  const canManage = hasRole('SYSTEM_ADMIN', 'HQ_STORE_KEEPER')
+  const canManage = hasRole('BRANCH_ADMIN', 'WAREHOUSE_STAFF')
 
   const { data: product, isLoading } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id) })
   const { data: stock } = useQuery({ queryKey: ['product-stock', id], queryFn: () => getProductStock(id) })

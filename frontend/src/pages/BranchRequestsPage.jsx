@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { listBranchRequests, createBranchRequest } from "../api/branchRequests";
+import {
+  listBranchRequests,
+  createBranchRequest,
+  quickTransfer,
+} from "../api/branchRequests";
 import { listWarehouses } from "../api/organization";
 import { listProducts } from "../api/products";
 import { apiErrorMessage } from "../api/client";
-import { toastSuccess, toastError } from "../lib/toast";
+import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Zap } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
@@ -22,6 +26,13 @@ const EMPTY_FORM = {
   note: "",
   items: [{ ...EMPTY_ITEM }],
 };
+const EMPTY_QUICK_ITEM = { productId: "", quantity: "" };
+const EMPTY_QUICK_FORM = {
+  fromWarehouseId: "",
+  toWarehouseId: "",
+  note: "",
+  items: [{ ...EMPTY_QUICK_ITEM }],
+};
 const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "TRANSFERRED"];
 
 export default function BranchRequestsPage() {
@@ -31,8 +42,11 @@ export default function BranchRequestsPage() {
   const [status, setStatus] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [quickModalOpen, setQuickModalOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState(EMPTY_QUICK_FORM);
 
-  const canCreate = hasRole("SYSTEM_ADMIN", "BRANCH_STORE_KEEPER");
+  const canCreate = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canQuickTransfer = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data, isLoading } = useQuery({
     queryKey: ["branch-requests", { status }],
@@ -86,13 +100,70 @@ export default function BranchRequestsPage() {
     });
   };
 
+  const quickTransferMutation = useMutation({
+    mutationFn: quickTransfer,
+    onSuccess: (request) => {
+      toastSuccess("ໂອນຍ້າຍສິນຄ້າແລ້ວ");
+      queryClient.invalidateQueries({ queryKey: ["branch-requests"] });
+      setQuickModalOpen(false);
+      setQuickForm(EMPTY_QUICK_FORM);
+      navigate(`/branch-requests/${request.id}`);
+    },
+    onError: (err) => toastError(apiErrorMessage(err)),
+  });
+
+  const updateQuickItem = (idx, patch) => {
+    const items = quickForm.items.map((it, i) =>
+      i === idx ? { ...it, ...patch } : it,
+    );
+    setQuickForm({ ...quickForm, items });
+  };
+  const addQuickItem = () =>
+    setQuickForm({
+      ...quickForm,
+      items: [...quickForm.items, { ...EMPTY_QUICK_ITEM }],
+    });
+  const removeQuickItem = (idx) =>
+    setQuickForm({
+      ...quickForm,
+      items: quickForm.items.filter((_, i) => i !== idx),
+    });
+
+  const handleQuickSubmit = async (e) => {
+    e.preventDefault();
+    const result = await confirmAction({
+      title: "ໂອນຍ້າຍສິນຄ້າດ່ວນ?",
+      text: "ລະບົບຈະຕັດສະຕັອກຈາກຄັງຕົ້ນທາງແລະເພີ່ມໃຫ້ຄັງປາຍທາງທັນທີ ບໍ່ຕ້ອງລໍການອະນຸມັດ",
+    });
+    if (!result.isConfirmed) return;
+    quickTransferMutation.mutate({
+      ...quickForm,
+      fromWarehouseId: Number(quickForm.fromWarehouseId),
+      toWarehouseId: Number(quickForm.toWarehouseId),
+      items: quickForm.items.map((it) => ({
+        productId: Number(it.productId),
+        quantity: Number(it.quantity),
+      })),
+    });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">ຄຳຂໍເບີກລະຫວ່າງຄັງ</h2>
-        {canCreate && (
-          <Button onClick={() => setModalOpen(true)}>+ ສ້າງຄຳຂໍເບີກ</Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canQuickTransfer && (
+            <Button
+              variant="secondary"
+              onClick={() => setQuickModalOpen(true)}
+            >
+              <Zap size={15} /> ໂອນຍ້າຍດ່ວນ
+            </Button>
+          )}
+          {canCreate && (
+            <Button onClick={() => setModalOpen(true)}>+ ສ້າງຄຳຂໍເບີກ</Button>
+          )}
+        </div>
       </div>
 
       <select
@@ -223,6 +294,96 @@ export default function BranchRequestsPage() {
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
               ສົ່ງຄຳຂໍ
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={quickModalOpen}
+        title="ໂອນຍ້າຍສິນຄ້າດ່ວນ"
+        icon={Zap}
+        onClose={() => setQuickModalOpen(false)}
+        wide
+      >
+        <form onSubmit={handleQuickSubmit}>
+          <p className="text-xs text-gray-400 mb-3">
+            ໂອນລະຫວ່າງຄັງໃດກໍໄດ້ທັນທີ ບໍ່ຕ້ອງຜ່ານການອະນຸມັດ — ໃຊ້ຕອນຄັງໃດຄັງໜຶ່ງຂາດເຄື່ອງດ່ວນ
+          </p>
+          <div className="grid grid-cols-2 gap-x-4">
+            <FormField label="ຈາກຄັງ">
+              <select
+                className={selectClass}
+                value={quickForm.fromWarehouseId}
+                onChange={(e) =>
+                  setQuickForm({ ...quickForm, fromWarehouseId: e.target.value })
+                }
+                required
+              >
+                <option value="">-- ເລືອກຄັງຕົ້ນທາງ --</option>
+                {warehouses?.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="ໄປຄັງ">
+              <select
+                className={selectClass}
+                value={quickForm.toWarehouseId}
+                onChange={(e) =>
+                  setQuickForm({ ...quickForm, toWarehouseId: e.target.value })
+                }
+                required
+              >
+                <option value="">-- ເລືອກຄັງປາຍທາງ --</option>
+                {warehouses
+                  ?.filter((w) => String(w.id) !== quickForm.fromWarehouseId)
+                  .map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+              </select>
+            </FormField>
+          </div>
+          <FormField label="ໝາຍເຫດ">
+            <input
+              className={inputClass}
+              value={quickForm.note}
+              onChange={(e) =>
+                setQuickForm({ ...quickForm, note: e.target.value })
+              }
+            />
+          </FormField>
+
+          <div className="mt-4">
+            <ItemRowsEditor
+              title="ລາຍການສິນຄ້າທີ່ໂອນ"
+              items={quickForm.items}
+              products={products}
+              onUpdate={updateQuickItem}
+              onAdd={addQuickItem}
+              onRemove={removeQuickItem}
+              quantityField="quantity"
+              quantityLabel="ຈຳນວນ"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setQuickModalOpen(false)}
+            >
+              ຍົກເລີກ
+            </Button>
+            <Button
+              type="submit"
+              disabled={quickTransferMutation.isPending}
+            >
+              ຢືນຢັນໂອນຍ້າຍ
             </Button>
           </div>
         </form>

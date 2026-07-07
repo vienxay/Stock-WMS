@@ -12,7 +12,7 @@ const loginSchema = z.object({
 
 async function fetchRoles(runner, userId) {
   const [rows] = await runner.query(
-    `SELECT r.code, ur.warehouse_id AS warehouseId
+    `SELECT r.code, ur.branch_id AS branchId, ur.warehouse_id AS warehouseId
      FROM user_roles ur JOIN roles r ON r.id = ur.role_id
      WHERE ur.user_id = ?`,
     [userId],
@@ -51,7 +51,11 @@ const login = asyncHandler(async (req, res) => {
     employeeId: user.employee_id,
     fullName: user.full_name,
     branchId: user.branch_id,
-    roles: roles.map((r) => ({ code: r.code, warehouseId: r.warehouseId })),
+    roles: roles.map((r) => ({
+      code: r.code,
+      branchId: r.branchId,
+      warehouseId: r.warehouseId,
+    })),
   };
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {

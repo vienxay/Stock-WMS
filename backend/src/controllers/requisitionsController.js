@@ -3,6 +3,7 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { recordMovement } = require("../services/stockMovementService");
+const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
 
 const createRequisitionSchema = z.object({
   warehouseId: z.number().int().positive(),
@@ -84,6 +85,10 @@ const getRequisition = asyncHandler(async (req, res) => {
 const createRequisition = asyncHandler(async (req, res) => {
   const body = createRequisitionSchema.parse(req.body);
 
+  if (!(await userCanAccessWarehouse(req.user, body.warehouseId))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິສ້າງໃບຂໍເບີກໃຫ້ຄັງນີ້");
+  }
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -125,6 +130,9 @@ const approveRequisition = asyncHandler(async (req, res) => {
   if (requisition.status !== "PENDING") {
     throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
   }
+  if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິອະນຸມັດໃບຂໍເບີກນີ້");
+  }
   await pool.query(
     `UPDATE requisitions SET status = 'APPROVED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
     [req.user.sub, req.params.id],
@@ -137,6 +145,9 @@ const rejectRequisition = asyncHandler(async (req, res) => {
   const requisition = await findRequisitionOr404(pool, req.params.id);
   if (requisition.status !== "PENDING") {
     throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
+  }
+  if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິປະຕິເສດໃບຂໍເບີກນີ້");
   }
   await pool.query(
     `UPDATE requisitions SET status = 'REJECTED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
@@ -157,6 +168,9 @@ const issueRequisition = asyncHandler(async (req, res) => {
     const requisition = await findRequisitionOr404(conn, req.params.id);
     if (requisition.status !== "APPROVED") {
       throw new AppError(400, "ຕ້ອງອະນຸມັດໃບຂໍເບີກນີ້ກ່ອນຈຶ່ງຈະຈ່າຍເຄື່ອງໄດ້");
+    }
+    if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
+      throw new AppError(403, "ບໍ່ມີສິດທິຈ່າຍເຄື່ອງໃຫ້ໃບຂໍເບີກນີ້");
     }
 
     for (const item of body.items) {

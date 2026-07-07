@@ -33,18 +33,40 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  // SYSTEM_ADMIN ผ่านได้ทุกที่ เหมือน logic ฝั่ง backend (roleMiddleware.requireRole)
+  // SUPER_ADMIN ผ่านได้ทุกที่ เหมือน logic ฝั่ง backend (roleMiddleware.requireRole)
   const hasRole = useCallback(
     (...codes) => {
       const roles = user?.roles || [];
       return roles.some(
-        (r) => r.code === "SYSTEM_ADMIN" || codes.includes(r.code),
+        (r) => r.code === "SUPER_ADMIN" || codes.includes(r.code),
       );
     },
     [user],
   );
 
-  const value = { user, isAuthenticated: !!user, login, logout, hasRole };
+  // สิทธิ์ระดับคลัง — ล้อ logic เดียวกับ roleMiddleware.userCanAccessWarehouse ฝั่ง backend
+  // เรียกใช้เพื่อซ่อน/แสดงปุ่มบนหน้าเว็บเท่านั้น (สิทธิ์จริงบังคับที่ backend เสมอ)
+  const canAccessWarehouse = useCallback(
+    (warehouseId, branchId) => {
+      const roles = user?.roles || [];
+      return roles.some((r) => {
+        if (r.code === "SUPER_ADMIN") return true;
+        if (r.code === "BRANCH_ADMIN") return Number(r.branchId) === Number(branchId);
+        if (r.code === "WAREHOUSE_STAFF") return Number(r.warehouseId) === Number(warehouseId);
+        return false;
+      });
+    },
+    [user],
+  );
+
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    hasRole,
+    canAccessWarehouse,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -301,7 +301,7 @@ const IMPORT_HEADER_ALIASES = {
   "reorder point": "reorderPoint",
   ສາງ: "warehouseName",
   warehouse: "warehouseName",
-  ຈຳນວນເລີ່ມຕົ້ນ: "initialQuantity",
+  ຈຳນວນ: "initialQuantity",
   "initial quantity": "initialQuantity",
   quantity: "initialQuantity",
 };

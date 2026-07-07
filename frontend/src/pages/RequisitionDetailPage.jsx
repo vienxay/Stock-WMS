@@ -23,8 +23,8 @@ export default function RequisitionDetailPage() {
   const [issueModalOpen, setIssueModalOpen] = useState(false);
   const [issueQtys, setIssueQtys] = useState({});
 
-  const canApprove = hasRole("SYSTEM_ADMIN", "DEPT_APPROVER");
-  const canIssue = hasRole("SYSTEM_ADMIN", "BRANCH_STORE_KEEPER");
+  const canApprove = hasRole("SUPER_ADMIN", "BRANCH_ADMIN");
+  const canIssue = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data: requisition, isLoading } = useQuery({
     queryKey: ["requisition", id],
@@ -169,7 +169,7 @@ export default function RequisitionDetailPage() {
           </>
         )}
         {requisition.status === "APPROVED" && canIssue && (
-          <Button onClick={openIssue}>ຈ່າຍເຄື່ອງ</Button>
+          <Button onClick={openIssue}>ຮັບເຄື່ອງ</Button>
         )}
       </div>
 
@@ -210,7 +210,7 @@ export default function RequisitionDetailPage() {
               ຍົກເລີກ
             </Button>
             <Button type="submit" disabled={issueMutation.isPending}>
-              ຢືນຢັນຈ່າຍເຄື່ອງ
+              ຢືນຢັນຮັບເຄື່ອງ
             </Button>
           </div>
         </form>

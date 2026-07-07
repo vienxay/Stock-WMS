@@ -3,6 +3,7 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { recordMovement } = require("../services/stockMovementService");
+const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
 
 const createStockTakeSchema = z.object({
   warehouseId: z.number().int().positive(),
@@ -63,6 +64,10 @@ const getStockTake = asyncHandler(async (req, res) => {
 const createStockTake = asyncHandler(async (req, res) => {
   const body = createStockTakeSchema.parse(req.body);
 
+  if (!(await userCanAccessWarehouse(req.user, body.warehouseId))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິກວດນັບຄັງນີ້");
+  }
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -105,6 +110,9 @@ const updateCount = asyncHandler(async (req, res) => {
   if (stockTake.status !== "IN_PROGRESS") {
     throw new AppError(400, "ຮອບກວດນັບນີ້ປິດໄປແລ້ວ ແກ້ໄຂບໍ່ໄດ້");
   }
+  if (!(await userCanAccessWarehouse(req.user, stockTake.warehouse_id))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິແກ້ໄຂຮອບກວດນັບນີ້");
+  }
 
   const [result] = await pool.query(
     `UPDATE stock_take_items SET counted_qty = ? WHERE id = ? AND stock_take_id = ?`,
@@ -129,6 +137,9 @@ const completeStockTake = asyncHandler(async (req, res) => {
     const stockTake = await findStockTakeOr404(conn, req.params.id);
     if (stockTake.status !== "IN_PROGRESS") {
       throw new AppError(400, "ຮອບກວດນັບນີ້ປິດໄປແລ້ວ");
+    }
+    if (!(await userCanAccessWarehouse(req.user, stockTake.warehouse_id))) {
+      throw new AppError(403, "ບໍ່ມີສິດທິປິດຮອບກວດນັບນີ້");
     }
 
     const [items] = await conn.query(

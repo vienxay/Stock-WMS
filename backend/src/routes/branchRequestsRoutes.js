@@ -11,22 +11,27 @@ router.get("/", ctrl.listRequests);
 router.get("/:id", ctrl.getRequest);
 router.post(
   "/",
-  requireRole("SYSTEM_ADMIN", "BRANCH_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
   ctrl.createRequest,
+);
+router.post(
+  "/quick-transfer",
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
+  ctrl.quickTransfer,
 );
 router.put(
   "/:id/approve",
-  requireRole("SYSTEM_ADMIN", "HQ_APPROVER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.approveRequest,
 );
 router.put(
   "/:id/reject",
-  requireRole("SYSTEM_ADMIN", "HQ_APPROVER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.rejectRequest,
 );
 router.post(
   "/:id/transfer",
-  requireRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.transferRequest,
 );
 

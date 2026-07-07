@@ -10,6 +10,7 @@ import {
   assignUserRole,
   revokeUserRole,
   listWarehouses,
+  listBranches,
 } from "../../api/organization";
 import { apiErrorMessage } from "../../api/client";
 import { toastSuccess, toastError, confirmAction } from "../../lib/toast";
@@ -242,6 +243,10 @@ export default function UsersTab() {
 function UserRolesModal({ user, onClose }) {
   const queryClient = useQueryClient();
   const { data: roles } = useQuery({ queryKey: ["roles"], queryFn: listRoles });
+  const { data: branches } = useQuery({
+    queryKey: ["branches"],
+    queryFn: listBranches,
+  });
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses"],
     queryFn: () => listWarehouses(),
@@ -252,7 +257,10 @@ function UserRolesModal({ user, onClose }) {
   });
 
   const [roleId, setRoleId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
+
+  const selectedRoleCode = roles?.find((r) => String(r.id) === roleId)?.code;
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["user-roles", user.id] });
@@ -263,6 +271,7 @@ function UserRolesModal({ user, onClose }) {
       toastSuccess("ມອບສິດທິແລ້ວ");
       invalidate();
       setRoleId("");
+      setBranchId("");
       setWarehouseId("");
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -282,13 +291,24 @@ function UserRolesModal({ user, onClose }) {
     assignMutation.mutate({
       userId: user.id,
       roleId: Number(roleId),
-      warehouseId: warehouseId ? Number(warehouseId) : null,
+      branchId:
+        selectedRoleCode === "BRANCH_ADMIN" && branchId ? Number(branchId) : null,
+      warehouseId:
+        selectedRoleCode === "WAREHOUSE_STAFF" && warehouseId
+          ? Number(warehouseId)
+          : null,
     });
   };
 
   const handleRevoke = async (id) => {
     const result = await confirmAction({ title: "ຖອນສິດທິນີ້?" });
     if (result.isConfirmed) revokeMutation.mutate(id);
+  };
+
+  const describeScope = (r) => {
+    if (r.branch_id) return ` — ສາຂາ ${r.branch_name}`;
+    if (r.warehouse_id) return ` — ຄັງ ${r.warehouse_name}`;
+    return " — ທົ່ວທັງລະບົບ";
   };
 
   return (
@@ -305,9 +325,7 @@ function UserRolesModal({ user, onClose }) {
               >
                 <span>
                   {r.role_code}
-                  {r.warehouse_id
-                    ? ` — ຄັງ #${r.warehouse_id}`
-                    : " — ທົ່ວທັງລະບົບ"}
+                  {describeScope(r)}
                 </span>
                 <button
                   onClick={() => handleRevoke(r.id)}
@@ -328,7 +346,11 @@ function UserRolesModal({ user, onClose }) {
           <select
             className={selectClass}
             value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
+            onChange={(e) => {
+              setRoleId(e.target.value);
+              setBranchId("");
+              setWarehouseId("");
+            }}
             required
           >
             <option value="">-- ເລືອກບົດບາດ --</option>
@@ -339,20 +361,49 @@ function UserRolesModal({ user, onClose }) {
             ))}
           </select>
         </FormField>
-        <FormField label="ຂອບເຂດຄັງ (ບໍ່ລະບຸ = ທົ່ວທັງລະບົບ)">
-          <select
-            className={selectClass}
-            value={warehouseId}
-            onChange={(e) => setWarehouseId(e.target.value)}
-          >
-            <option value="">-- ທົ່ວທັງລະບົບ --</option>
-            {warehouses?.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
-        </FormField>
+
+        {selectedRoleCode === "BRANCH_ADMIN" && (
+          <FormField label="ສາຂາ">
+            <select
+              className={selectClass}
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              required
+            >
+              <option value="">-- ເລືອກສາຂາ --</option>
+              {branches?.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        )}
+
+        {selectedRoleCode === "WAREHOUSE_STAFF" && (
+          <FormField label="ຄັງ">
+            <select
+              className={selectClass}
+              value={warehouseId}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              required
+            >
+              <option value="">-- ເລືອກຄັງ --</option>
+              {warehouses?.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        )}
+
+        {selectedRoleCode === "SUPER_ADMIN" && (
+          <p className="text-xs text-gray-400 -mt-2 mb-4">
+            ບົດບາດນີ້ໃຫ້ສິດທິທົ່ວທັງລະບົບ ບໍ່ຕ້ອງລະບຸຂອບເຂດ
+          </p>
+        )}
+
         <div className="flex justify-end">
           <Button type="submit" disabled={assignMutation.isPending}>
             ມອບສິດທິ

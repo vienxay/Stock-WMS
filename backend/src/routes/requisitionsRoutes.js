@@ -11,22 +11,22 @@ router.get("/", ctrl.listRequisitions);
 router.get("/:id", ctrl.getRequisition);
 router.post(
   "/",
-  requireRole("EMPLOYEE", "BRANCH_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
   ctrl.createRequisition,
 );
 router.put(
   "/:id/approve",
-  requireRole("SYSTEM_ADMIN", "DEPT_APPROVER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.approveRequisition,
 );
 router.put(
   "/:id/reject",
-  requireRole("SYSTEM_ADMIN", "DEPT_APPROVER"),
+  requireRole("BRANCH_ADMIN"),
   ctrl.rejectRequisition,
 );
 router.post(
   "/:id/issue",
-  requireRole("SYSTEM_ADMIN", "BRANCH_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
   ctrl.issueRequisition,
 );
 

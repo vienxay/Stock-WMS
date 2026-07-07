@@ -50,7 +50,7 @@ export default function App() {
 
           <Route path="/reports" element={<ReportsPage />} />
 
-          <Route element={<ProtectedRoute roles={["SYSTEM_ADMIN"]} />}>
+          <Route element={<ProtectedRoute roles={["SUPER_ADMIN"]} />}>
             <Route path="/organization" element={<OrganizationPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/currency" element={<CurrencyPage />} />

@@ -23,8 +23,8 @@ export default function BranchRequestDetailPage() {
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [approveQtys, setApproveQtys] = useState({});
 
-  const canApprove = hasRole("SYSTEM_ADMIN", "HQ_APPROVER");
-  const canTransfer = hasRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER");
+  const canApprove = hasRole("SUPER_ADMIN", "BRANCH_ADMIN");
+  const canTransfer = hasRole("BRANCH_ADMIN");
 
   const { data: request, isLoading } = useQuery({
     queryKey: ["branch-request", id],
@@ -39,7 +39,7 @@ export default function BranchRequestDetailPage() {
   const approveMutation = useMutation({
     mutationFn: (items) => approveBranchRequest(id, { items }),
     onSuccess: () => {
-      toastSuccess("ອະນຸມັດຄຳຂໍແລ້ວ");
+      toastSuccess("ອະນຸມັດ ແລະ ໂອນສະຕັອກໄປສາຂາແລ້ວ");
       invalidate();
       setApproveModalOpen(false);
     },
@@ -178,6 +178,9 @@ export default function BranchRequestDetailPage() {
         onClose={() => setApproveModalOpen(false)}
       >
         <form onSubmit={handleApproveSubmit}>
+          <p className="text-xs text-gray-400 mb-3">
+            ອະນຸມັດແລ້ວ ລະບົບຈະໂອນສະຕັອກຈາກ HQ ໄປສາຂາໃຫ້ທັນທີ ບໍ່ຕ້ອງກົດໂອນແຍກອີກຂັ້ນຕອນ
+          </p>
           <div className="space-y-3 mb-4">
             {request.items.map((it) => (
               <div

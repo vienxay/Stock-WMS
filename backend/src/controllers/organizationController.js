@@ -339,6 +339,7 @@ const listRoles = asyncHandler(async (req, res) => {
 const userRoleSchema = z.object({
   userId: z.number().int().positive(),
   roleId: z.number().int().positive(),
+  branchId: z.number().int().positive().optional().nullable(),
   warehouseId: z.number().int().positive().optional().nullable(),
 });
 
@@ -347,8 +348,13 @@ const listUserRoles = asyncHandler(async (req, res) => {
   const where = userId ? "WHERE ur.user_id = ?" : "";
   const params = userId ? [userId] : [];
   const [rows] = await pool.query(
-    `SELECT ur.id, ur.user_id, ur.warehouse_id, r.code AS role_code, r.name AS role_name
-     FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+    `SELECT ur.id, ur.user_id, ur.branch_id, ur.warehouse_id,
+            b.name AS branch_name, w.name AS warehouse_name,
+            r.code AS role_code, r.name AS role_name
+     FROM user_roles ur
+     JOIN roles r ON r.id = ur.role_id
+     LEFT JOIN branches b ON b.id = ur.branch_id
+     LEFT JOIN warehouses w ON w.id = ur.warehouse_id
      ${where}
      ORDER BY ur.id`,
     params,
@@ -356,25 +362,26 @@ const listUserRoles = asyncHandler(async (req, res) => {
   res.json(rows);
 });
 
-// UNIQUE KEY ของ user_roles ไม่กันซ้ำเวลา warehouse_id เป็น NULL (MySQL ไม่เทียบ NULL กับ NULL)
+// UNIQUE KEY ของ user_roles ไม่กันซ้ำเวลา branch_id/warehouse_id เป็น NULL (MySQL ไม่เทียบ NULL กับ NULL)
 // จึงต้องเช็คซ้ำเองก่อน insert สำหรับกรณีสิทธิ์ทั่วทั้งระบบ
 const assignUserRole = asyncHandler(async (req, res) => {
   const body = userRoleSchema.parse(req.body);
+  const branchId = body.branchId ?? null;
   const warehouseId = body.warehouseId ?? null;
 
   const [existing] = await pool.query(
     `SELECT id FROM user_roles
      WHERE user_id = ? AND role_id = ?
-       AND (warehouse_id <=> ?)`,
-    [body.userId, body.roleId, warehouseId],
+       AND (branch_id <=> ?) AND (warehouse_id <=> ?)`,
+    [body.userId, body.roleId, branchId, warehouseId],
   );
   if (existing.length) {
     throw new AppError(409, "ຜູ້ໃຊ້ນີ້ມີສິດທິນີ້ຢູ່ແລ້ວ");
   }
 
   const [result] = await pool.query(
-    "INSERT INTO user_roles (user_id, role_id, warehouse_id) VALUES (?, ?, ?)",
-    [body.userId, body.roleId, warehouseId],
+    "INSERT INTO user_roles (user_id, role_id, branch_id, warehouse_id) VALUES (?, ?, ?, ?)",
+    [body.userId, body.roleId, branchId, warehouseId],
   );
   const [rows] = await pool.query("SELECT * FROM user_roles WHERE id = ?", [
     result.insertId,

@@ -11,7 +11,7 @@ router.get("/", ctrl.listReceipts);
 router.get("/:id", ctrl.getReceipt);
 router.post(
   "/",
-  requireRole("SYSTEM_ADMIN", "HQ_STORE_KEEPER"),
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
   ctrl.createReceipt,
 );
 

@@ -4,6 +4,8 @@ export const listProducts = (params) =>
   apiClient.get("/products", { params }).then((r) => r.data);
 export const getProduct = (id) =>
   apiClient.get(`/products/${id}`).then((r) => r.data);
+export const lookupProduct = (code) =>
+  apiClient.get("/products/lookup", { params: { code } }).then((r) => r.data);
 export const getProductStock = (id) =>
   apiClient.get(`/products/${id}/stock`).then((r) => r.data);
 export const createProduct = (body) =>

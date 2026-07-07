@@ -2,6 +2,7 @@ const ExcelJS = require("exceljs");
 const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
+const { warehouseStaffWarehouseId } = require("../middleware/roleMiddleware");
 
 async function sendAsExcel(res, sheetName, columns, rows, filename) {
   const workbook = new ExcelJS.Workbook();
@@ -24,7 +25,9 @@ async function sendAsExcel(res, sheetName, columns, rows, filename) {
 // ---------------------------------------------------------------------
 
 const getStockBalanceReport = asyncHandler(async (req, res) => {
-  const { warehouseId, branchId, categoryId, format } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
+  const { branchId, categoryId, format } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   const conditions = [];
   const params = [];
   if (warehouseId) {
@@ -82,9 +85,9 @@ const getStockBalanceReport = asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------
 
 const getMovementsReport = asyncHandler(async (req, res) => {
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
   const {
     productId,
-    warehouseId,
     branchId,
     movementType,
     dateFrom,
@@ -92,6 +95,7 @@ const getMovementsReport = asyncHandler(async (req, res) => {
     limit = "100",
     offset = "0",
   } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   const conditions = [];
   const params = [];
   if (productId) {
@@ -140,7 +144,9 @@ const getMovementsReport = asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------
 
 const getPeriodSummary = asyncHandler(async (req, res) => {
-  const { warehouseId, year, productId } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
+  const { year, productId } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   if (!warehouseId || !year) {
     throw new AppError(400, "ຕ້ອງລະບຸ warehouseId ແລະ year");
   }
@@ -169,7 +175,9 @@ const getPeriodSummary = asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------
 
 const getYearlySummary = asyncHandler(async (req, res) => {
-  const { warehouseId, year, format } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
+  const { year, format } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   if (!warehouseId || !year) {
     throw new AppError(400, "ຕ້ອງລະບຸ warehouseId ແລະ year");
   }

@@ -5,12 +5,18 @@ import { listWarehouses } from '../../api/organization'
 import { listCategories } from '../../api/catalog'
 import { toastError } from '../../lib/toast'
 import { apiErrorMessage } from '../../api/client'
+import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 import { selectClass } from '../../components/ui/FormField'
 
 export default function StockBalanceTab() {
-  const [warehouseId, setWarehouseId] = useState('')
+  const { user, hasRole } = useAuth()
+  const warehouseStaffRole = (user?.roles || []).find((r) => r.code === 'WAREHOUSE_STAFF')
+  const lockedWarehouseId =
+    !hasRole('SUPER_ADMIN', 'BRANCH_ADMIN') && warehouseStaffRole ? warehouseStaffRole.warehouseId : null
+
+  const [warehouseId, setWarehouseId] = useState(lockedWarehouseId ? String(lockedWarehouseId) : '')
   const [categoryId, setCategoryId] = useState('')
 
   const { data: warehouses } = useQuery({ queryKey: ['warehouses'], queryFn: () => listWarehouses() })
@@ -34,14 +40,20 @@ export default function StockBalanceTab() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-3">
-          <select className={`${selectClass} max-w-xs`} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
-            <option value="">-- ທຸກຄັງ --</option>
-            {warehouses?.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
+          {lockedWarehouseId ? (
+            <span className="flex items-center px-3 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+              {warehouses?.find((w) => w.id === lockedWarehouseId)?.name ?? '-'}
+            </span>
+          ) : (
+            <select className={`${selectClass} max-w-xs`} value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
+              <option value="">-- ທຸກຄັງ --</option>
+              {warehouses?.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          )}
           <select className={`${selectClass} max-w-xs`} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">-- ທຸກໝວດໝູ່ --</option>
             {categories?.map((c) => (

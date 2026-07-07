@@ -260,8 +260,9 @@ CREATE TABLE stock_receipt_items (
 
 CREATE TABLE branch_requests (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
-    from_warehouse_id   INT NOT NULL,                 -- ต้องเป็นคลัง HQ (is_central = TRUE)
-    to_warehouse_id     INT NOT NULL,                 -- คลังสาขาปลายทาง (ต้อง type เดียวกัน)
+    from_warehouse_id   INT NOT NULL,                 -- SUPPLY: ต้องเป็นคลัง HQ (is_central = TRUE) / TRANSFER: คลังสาขาอื่น
+    to_warehouse_id     INT NOT NULL,                 -- คลังปลายทาง (SUPPLY ต้อง type เดียวกันกับ HQ)
+    request_type        ENUM('SUPPLY','TRANSFER') NOT NULL DEFAULT 'SUPPLY', -- SUPPLY = ขอจาก HQ, TRANSFER = ขอข้ามสาขา (ไม่ผ่าน HQ)
     status              ENUM('PENDING','APPROVED','REJECTED','TRANSFERRED') NOT NULL DEFAULT 'PENDING',
     requested_by        INT NOT NULL,
     requested_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -322,7 +323,7 @@ CREATE TABLE stock_movements (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     product_id          INT NOT NULL,
     warehouse_id        INT NOT NULL,
-    movement_type       ENUM('RECEIPT','ISSUE','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT') NOT NULL,
+    movement_type       ENUM('RECEIPT','ISSUE','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT','USAGE') NOT NULL,
     quantity            DECIMAL(14,2) NOT NULL,        -- ค่าบวก = เข้า, ค่าลบ = ออก
     unit_value_lak      DECIMAL(18,4),
     total_value_lak     DECIMAL(18,2),

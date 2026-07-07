@@ -153,6 +153,19 @@ const exportProducts = asyncHandler(async (req, res) => {
   res.end();
 });
 
+// ค้นหาสินค้าแบบตรงเป๊ะ 1 รายการ (sku หรือ barcode) — ใช้กับฟีเจอร์สแกน QR/บาร์โค้ด
+const lookupProduct = asyncHandler(async (req, res) => {
+  const { code } = req.query;
+  if (!code) throw new AppError(400, "ຕ້ອງລະບຸ code");
+
+  const [rows] = await pool.query(
+    "SELECT * FROM products WHERE sku = ? OR barcode = ? LIMIT 1",
+    [code, code],
+  );
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບສິນຄ້າທີ່ກົງກັບລະຫັດນີ້");
+  res.json(rows[0]);
+});
+
 const getProduct = asyncHandler(async (req, res) => {
   const product = await findProductOr404(req.params.id);
   const [images] = await pool.query(
@@ -663,6 +676,7 @@ const bulkImportProducts = asyncHandler(async (req, res) => {
 
 module.exports = {
   listProducts,
+  lookupProduct,
   exportProducts,
   getProduct,
   getProductStock,

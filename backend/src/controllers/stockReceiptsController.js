@@ -4,7 +4,10 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { getRateToBase } = require("../services/exchangeRateService");
 const { recordMovement } = require("../services/stockMovementService");
-const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
+const {
+  userCanAccessWarehouse,
+  warehouseStaffWarehouseId,
+} = require("../middleware/roleMiddleware");
 
 const receiptItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -37,7 +40,9 @@ async function findReceiptOr404(runner, id) {
 }
 
 const listReceipts = asyncHandler(async (req, res) => {
-  const { warehouseId, status } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
+  const { status } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   const conditions = [];
   const params = [];
   if (warehouseId) {

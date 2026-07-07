@@ -9,6 +9,7 @@ import {
 } from "../../api/organization";
 import { apiErrorMessage } from "../../api/client";
 import { toastSuccess, toastError } from "../../lib/toast";
+import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Spinner from "../../components/ui/Spinner";
@@ -27,6 +28,11 @@ const EMPTY_FORM = {
 
 export default function EmployeesTab() {
   const queryClient = useQueryClient();
+  const { user, hasRole } = useAuth();
+  const ownBranchId = hasRole("SUPER_ADMIN")
+    ? null
+    : (user?.roles?.find((r) => r.code === "BRANCH_ADMIN")?.branchId ?? null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: () => listEmployees(),
@@ -35,6 +41,9 @@ export default function EmployeesTab() {
     queryKey: ["branches"],
     queryFn: listBranches,
   });
+  const availableBranches = ownBranchId
+    ? branches?.filter((b) => b.id === ownBranchId)
+    : branches;
   const { data: departments } = useQuery({
     queryKey: ["departments"],
     queryFn: () => listDepartments(),
@@ -69,7 +78,7 @@ export default function EmployeesTab() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, branchId: ownBranchId ?? "" });
     setModalOpen(true);
   };
 
@@ -169,10 +178,11 @@ export default function EmployeesTab() {
               className={selectClass}
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
+              disabled={!!ownBranchId}
               required
             >
               <option value="">-- ເລືອກສາຂາ --</option>
-              {branches?.map((b) => (
+              {availableBranches?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
                 </option>

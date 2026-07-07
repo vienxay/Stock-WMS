@@ -8,6 +8,7 @@ import {
   PackagePlus,
   ArrowLeftRight,
   PackageMinus,
+  Wrench,
   ClipboardCheck,
   BarChart3,
   Building2,
@@ -26,12 +27,18 @@ const NAV_ITEMS = [
   { to: "/stock-receipts", label: "ຮັບເຂົ້າສິນຄ້າ", icon: PackagePlus },
   { to: "/branch-requests", label: "ໂອນຍ້າຍສິນຄ້າ", icon: ArrowLeftRight },
   { to: "/requisitions", label: "ເບີກຈ່າຍສິນຄ້າ", icon: PackageMinus },
+  { to: "/stock-usages", label: "ນຳໃຊ້ອຸປະກອນ", icon: Wrench },
   { to: "/stock-takes", label: "ກວດນັບສະຕັອກ", icon: ClipboardCheck },
   { to: "/reports", label: "ບົດລາຍງານ", icon: BarChart3 },
 ];
 
+const ORGANIZATION_NAV_ITEM = {
+  to: "/organization",
+  label: "ອົງກອນ/ຜູ້ໃຊ້ງານ",
+  icon: Building2,
+};
+
 const ADMIN_NAV_ITEMS = [
-  { to: "/organization", label: "ອົງກອນ/ຜູ້ໃຊ້ງານ", icon: Building2 },
   { to: "/catalog", label: "ໝວດໝູ່ສິນຄ້າ", icon: Tags },
   { to: "/currency", label: "ສະກຸນເງິນ", icon: Coins },
 ];
@@ -101,24 +108,37 @@ export default function Layout() {
               {!collapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           ))}
-          {hasRole("SUPER_ADMIN") && (
+          {hasRole("SUPER_ADMIN", "BRANCH_ADMIN") && (
             <>
               {!collapsed && (
                 <div className="pt-4 pb-1 px-3 text-xs font-semibold text-slate-500 uppercase">
                   ຕັ້ງຄ່າລະບົບ
                 </div>
               )}
-              {ADMIN_NAV_ITEMS.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={navLinkClass}
-                  title={item.label}
-                >
-                  <item.icon size={18} className="shrink-0" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </NavLink>
-              ))}
+              <NavLink
+                to={ORGANIZATION_NAV_ITEM.to}
+                className={navLinkClass}
+                title={ORGANIZATION_NAV_ITEM.label}
+              >
+                <ORGANIZATION_NAV_ITEM.icon size={18} className="shrink-0" />
+                {!collapsed && (
+                  <span className="truncate">{ORGANIZATION_NAV_ITEM.label}</span>
+                )}
+              </NavLink>
+              {hasRole("SUPER_ADMIN") &&
+                ADMIN_NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={navLinkClass}
+                    title={item.label}
+                  >
+                    <item.icon size={18} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="truncate">{item.label}</span>
+                    )}
+                  </NavLink>
+                ))}
             </>
           )}
         </nav>

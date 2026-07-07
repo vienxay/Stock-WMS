@@ -14,6 +14,7 @@ import {
 } from "../../api/organization";
 import { apiErrorMessage } from "../../api/client";
 import { toastSuccess, toastError, confirmAction } from "../../lib/toast";
+import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Spinner from "../../components/ui/Spinner";
@@ -242,15 +243,27 @@ export default function UsersTab() {
 
 function UserRolesModal({ user, onClose }) {
   const queryClient = useQueryClient();
-  const { data: roles } = useQuery({ queryKey: ["roles"], queryFn: listRoles });
+  const { user: currentUser, hasRole } = useAuth();
+  const ownBranchId = hasRole("SUPER_ADMIN")
+    ? null
+    : (currentUser?.roles?.find((r) => r.code === "BRANCH_ADMIN")?.branchId ??
+      null);
+
+  const { data: allRoles } = useQuery({ queryKey: ["roles"], queryFn: listRoles });
+  const roles = ownBranchId
+    ? allRoles?.filter((r) => r.code === "WAREHOUSE_STAFF")
+    : allRoles;
   const { data: branches } = useQuery({
     queryKey: ["branches"],
     queryFn: listBranches,
   });
-  const { data: warehouses } = useQuery({
+  const { data: allWarehouses } = useQuery({
     queryKey: ["warehouses"],
     queryFn: () => listWarehouses(),
   });
+  const warehouses = ownBranchId
+    ? allWarehouses?.filter((w) => w.branch_id === ownBranchId)
+    : allWarehouses;
   const { data: userRoles, isLoading } = useQuery({
     queryKey: ["user-roles", user.id],
     queryFn: () => listUserRoles({ userId: user.id }),

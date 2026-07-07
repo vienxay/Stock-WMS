@@ -2,15 +2,21 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMovementsReport } from '../../api/reports'
 import { listWarehouses } from '../../api/organization'
+import { useAuth } from '../../context/AuthContext'
 import Spinner from '../../components/ui/Spinner'
 import Button from '../../components/ui/Button'
 import { selectClass } from '../../components/ui/FormField'
 
-const MOVEMENT_TYPES = ['RECEIPT', 'ISSUE', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUSTMENT']
+const MOVEMENT_TYPES = ['RECEIPT', 'ISSUE', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUSTMENT', 'USAGE']
 const PAGE_SIZE = 50
 
 export default function MovementsTab() {
-  const [warehouseId, setWarehouseId] = useState('')
+  const { user, hasRole } = useAuth()
+  const warehouseStaffRole = (user?.roles || []).find((r) => r.code === 'WAREHOUSE_STAFF')
+  const lockedWarehouseId =
+    !hasRole('SUPER_ADMIN', 'BRANCH_ADMIN') && warehouseStaffRole ? warehouseStaffRole.warehouseId : null
+
+  const [warehouseId, setWarehouseId] = useState(lockedWarehouseId ? String(lockedWarehouseId) : '')
   const [movementType, setMovementType] = useState('')
   const [offset, setOffset] = useState(0)
 
@@ -29,21 +35,27 @@ export default function MovementsTab() {
   return (
     <div>
       <div className="flex gap-3 mb-4">
-        <select
-          className={`${selectClass} max-w-xs`}
-          value={warehouseId}
-          onChange={(e) => {
-            setWarehouseId(e.target.value)
-            setOffset(0)
-          }}
-        >
-          <option value="">-- ທຸກຄັງ --</option>
-          {warehouses?.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </select>
+        {lockedWarehouseId ? (
+          <span className="flex items-center px-3 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+            {warehouses?.find((w) => w.id === lockedWarehouseId)?.name ?? '-'}
+          </span>
+        ) : (
+          <select
+            className={`${selectClass} max-w-xs`}
+            value={warehouseId}
+            onChange={(e) => {
+              setWarehouseId(e.target.value)
+              setOffset(0)
+            }}
+          >
+            <option value="">-- ທຸກຄັງ --</option>
+            {warehouses?.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           className={`${selectClass} max-w-xs`}
           value={movementType}

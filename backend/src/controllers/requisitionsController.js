@@ -3,7 +3,10 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { recordMovement } = require("../services/stockMovementService");
-const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
+const {
+  userCanAccessWarehouse,
+  warehouseStaffWarehouseId,
+} = require("../middleware/roleMiddleware");
 
 const createRequisitionSchema = z.object({
   warehouseId: z.number().int().positive(),
@@ -39,7 +42,9 @@ async function findRequisitionOr404(runner, id) {
 }
 
 const listRequisitions = asyncHandler(async (req, res) => {
-  const { status, warehouseId, employeeId } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
+  const { status, employeeId } = req.query;
+  const warehouseId = ownWarehouseId ?? req.query.warehouseId;
   const conditions = [];
   const params = [];
   if (status) {

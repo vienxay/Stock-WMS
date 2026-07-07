@@ -33,21 +33,22 @@ router.post("/locations", requireRole(), ctrl.createLocation);
 router.get("/departments", ctrl.listDepartments);
 router.post("/departments", requireRole(), ctrl.createDepartment);
 
-router.get("/employees", ctrl.listEmployees);
-router.post("/employees", requireRole(), ctrl.createEmployee);
-router.put("/employees/:id", requireRole(), ctrl.updateEmployee);
+// พนักงาน/ผู้ใช้/สิทธิ์ — SUPER_ADMIN ทำได้ทุกสาขา, BRANCH_ADMIN ทำได้เฉพาะสาขาตัวเอง (สโคปเช็คในคอนโทรลเลอร์)
+router.get("/employees", requireRole("BRANCH_ADMIN"), ctrl.listEmployees);
+router.post("/employees", requireRole("BRANCH_ADMIN"), ctrl.createEmployee);
+router.put("/employees/:id", requireRole("BRANCH_ADMIN"), ctrl.updateEmployee);
 
-router.get("/users", requireRole(), ctrl.listUsers);
-router.post("/users", requireRole(), ctrl.createUser);
-router.put("/users/:id", requireRole(), ctrl.updateUser);
+router.get("/users", requireRole("BRANCH_ADMIN"), ctrl.listUsers);
+router.post("/users", requireRole("BRANCH_ADMIN"), ctrl.createUser);
+router.put("/users/:id", requireRole("BRANCH_ADMIN"), ctrl.updateUser);
 
 router.get("/roles", ctrl.listRoles);
 
-router.get("/user-roles", requireRole(), ctrl.listUserRoles);
-router.post("/user-roles", requireRole(), ctrl.assignUserRole);
+router.get("/user-roles", requireRole("BRANCH_ADMIN"), ctrl.listUserRoles);
+router.post("/user-roles", requireRole("BRANCH_ADMIN"), ctrl.assignUserRole);
 router.delete(
   "/user-roles/:id",
-  requireRole(),
+  requireRole("BRANCH_ADMIN"),
   ctrl.revokeUserRole,
 );
 

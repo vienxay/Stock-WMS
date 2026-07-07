@@ -32,7 +32,7 @@ export default function RequisitionsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  const canCreate = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canCreate = hasRole("WAREHOUSE_STAFF");
 
   const { data, isLoading } = useQuery({
     queryKey: ["requisitions", { status }],

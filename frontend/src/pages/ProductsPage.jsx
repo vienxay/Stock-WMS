@@ -15,10 +15,11 @@ import { listCategories } from "../api/catalog";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
-import { Pencil, Trash2, Upload, Download, FileDown } from "lucide-react";
+import { Pencil, Trash2, Upload, Download, FileDown, ScanLine } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
+import ScannerModal from "../components/ScannerModal";
 import FormField, { inputClass, selectClass } from "../components/ui/FormField";
 
 const EMPTY_FORM = {
@@ -35,11 +36,13 @@ const EMPTY_FORM = {
 
 export default function ProductsPage() {
   const { hasRole } = useAuth();
+  const canDelete = hasRole("SUPER_ADMIN");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [importResult, setImportResult] = useState(null);
   const [deleteResult, setDeleteResult] = useState(null);
@@ -195,13 +198,16 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">ສິນຄ້າ</h2>
         <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setScannerOpen(true)}>
+            <ScanLine size={15} /> ສະແກນ
+          </Button>
           <Button variant="secondary" onClick={handleExport}>
             <FileDown size={15} /> Export Excel
           </Button>
           {canManage && (
             <>
               <Button variant="secondary" onClick={handleDownloadTemplate}>
-                <Download size={15} /> ດາວໂຫຼດແບບຟอร์ม
+                <Download size={15} /> ດາວໂຫຼດແບບຟອມ Template
               </Button>
               <Button
                 variant="secondary"
@@ -247,7 +253,7 @@ export default function ProductsPage() {
         </select>
       </div>
 
-      {canManage && selectedIds.size > 0 && (
+      {canDelete && selectedIds.size > 0 && (
         <div className="flex items-center justify-between mb-4 px-4 py-2.5 rounded-lg bg-blue-50 text-blue-700 text-sm">
           <span>ເລືອກແລ້ວ {selectedIds.size} ລາຍການ</span>
           <div className="flex items-center gap-2">
@@ -274,7 +280,7 @@ export default function ProductsPage() {
         <table className="w-full text-sm bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
           <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
-              {canManage && (
+              {canDelete && (
                 <th className="px-4 py-3">
                   <input
                     type="checkbox"
@@ -300,7 +306,7 @@ export default function ProductsPage() {
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => navigate(`/products/${p.id}`)}
               >
-                {canManage && (
+                {canDelete && (
                   <td
                     className="px-4 py-3"
                     onClick={(e) => e.stopPropagation()}
@@ -380,7 +386,7 @@ export default function ProductsPage() {
                     >
                       <Pencil size={15} />
                     </button>
-                    {canManage && (
+                    {canDelete && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -399,7 +405,7 @@ export default function ProductsPage() {
             {!data?.length && (
               <tr>
                 <td
-                  colSpan={canManage ? 9 : 8}
+                  colSpan={canDelete ? 9 : 8}
                   className="px-4 py-8 text-center text-gray-400"
                 >
                   ບໍ່ພົບສິນຄ້າ
@@ -575,6 +581,8 @@ export default function ProductsPage() {
           </div>
         )}
       </Modal>
+
+      <ScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} />
     </div>
   );
 }

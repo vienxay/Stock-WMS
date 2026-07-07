@@ -9,6 +9,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 const canManageCatalog = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+const canDelete = requireRole();
 
 // ต้องมาก่อน "/:id" ไม่งั้น express จะจับ "import-template"/"bulk-import"/"export" เป็น :id
 router.get("/import-template", canManageCatalog, ctrl.getImportTemplate);
@@ -18,8 +19,9 @@ router.post(
   uploadExcelFile.single("file"),
   ctrl.bulkImportProducts,
 );
-router.delete("/bulk-delete", canManageCatalog, ctrl.bulkDeleteProducts);
+router.delete("/bulk-delete", canDelete, ctrl.bulkDeleteProducts);
 router.get("/export", ctrl.exportProducts);
+router.get("/lookup", ctrl.lookupProduct);
 
 router.get("/", ctrl.listProducts);
 router.get("/:id", ctrl.getProduct);
@@ -28,7 +30,7 @@ router.get("/:id/barcode", ctrl.getProductBarcode);
 router.get("/:id/qrcode", ctrl.getProductQrCode);
 router.post("/", canManageCatalog, ctrl.createProduct);
 router.put("/:id", canManageCatalog, ctrl.updateProduct);
-router.delete("/:id", canManageCatalog, ctrl.deleteProduct);
+router.delete("/:id", canDelete, ctrl.deleteProduct);
 
 router.post(
   "/:id/images",

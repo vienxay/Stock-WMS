@@ -61,7 +61,6 @@ export default function BranchRequestsPage() {
     queryFn: () => listProducts({ limit: 200 }),
   });
 
-  const centralWarehouses = warehouses?.filter((w) => w.is_central);
   const branchWarehouses = warehouses?.filter((w) => !w.is_central);
 
   const createMutation = useMutation({
@@ -186,8 +185,9 @@ export default function BranchRequestsPage() {
           <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wide text-left">
             <tr>
               <th className="px-4 py-3">ເລກທີ</th>
-              <th className="px-4 py-3">ຈາກຄັງ (HQ)</th>
-              <th className="px-4 py-3">ໄປຄັງ (ສາຂາ)</th>
+              <th className="px-4 py-3">ຈາກຄັງ</th>
+              <th className="px-4 py-3">ໄປຄັງ</th>
+              <th className="px-4 py-3">ປະເພດ</th>
               <th className="px-4 py-3">ສະຖານະ</th>
               <th className="px-4 py-3">ວັນທີຂໍ</th>
             </tr>
@@ -203,6 +203,9 @@ export default function BranchRequestsPage() {
                 <td className="px-4 py-3">{r.from_warehouse_name}</td>
                 <td className="px-4 py-3">{r.to_warehouse_name}</td>
                 <td className="px-4 py-3">
+                  <StatusBadge status={r.request_type} />
+                </td>
+                <td className="px-4 py-3">
                   <StatusBadge status={r.status} />
                 </td>
                 <td className="px-4 py-3">{r.requested_at?.slice(0, 10)}</td>
@@ -210,7 +213,7 @@ export default function BranchRequestsPage() {
             ))}
             {!data?.length && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   ບໍ່ພົບຄຳຂໍເບີກ
                 </td>
               </tr>
@@ -228,7 +231,7 @@ export default function BranchRequestsPage() {
       >
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormField label="ຈາກຄັງ (HQ)">
+            <FormField label="ຈາກຄັງ">
               <select
                 className={selectClass}
                 value={form.fromWarehouseId}
@@ -237,12 +240,14 @@ export default function BranchRequestsPage() {
                 }
                 required
               >
-                <option value="">-- ເລືອກຄັງສ່ວນກາງ --</option>
-                {centralWarehouses?.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
+                <option value="">-- ເລືອກຄັງຕົ້ນທາງ (HQ ຫຼືສາຂາອື່ນ) --</option>
+                {warehouses
+                  ?.filter((w) => String(w.id) !== form.toWarehouseId)
+                  .map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name} {w.is_central ? "(HQ)" : ""}
+                    </option>
+                  ))}
               </select>
             </FormField>
             <FormField label="ໄປຄັງ (ສາຂາ)">
@@ -255,14 +260,19 @@ export default function BranchRequestsPage() {
                 required
               >
                 <option value="">-- ເລືອກຄັງສາຂາ --</option>
-                {branchWarehouses?.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
+                {branchWarehouses
+                  ?.filter((w) => String(w.id) !== form.fromWarehouseId)
+                  .map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
               </select>
             </FormField>
           </div>
+          <p className="text-xs text-gray-400 mt-1">
+            ຖ້າຄັງຕົ້ນທາງເປັນ HQ = ຄຳຂໍເບີກທົ່ວໄປ, ຖ້າຄັງຕົ້ນທາງເປັນສາຂາອື່ນ = ຄຳຂໍໂອນຂ້າມສາຂາ (ຕ້ອງລໍໃຫ້ສາຂາຕົ້ນທາງອະນຸມັດ)
+          </p>
           <FormField label="ໝາຍເຫດ">
             <input
               className={inputClass}

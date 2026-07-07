@@ -4,6 +4,11 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { partialUpdate } = require("../utils/dbHelpers");
+const {
+  isSuperAdmin,
+  branchAdminBranchId,
+  userCanAccessWarehouse,
+} = require("../middleware/roleMiddleware");
 
 // ---------------------------------------------------------------------
 // Branches
@@ -215,7 +220,11 @@ const employeeSchema = z.object({
 });
 
 const listEmployees = asyncHandler(async (req, res) => {
-  const { branchId } = req.query;
+  const ownBranchId = isSuperAdmin(req.user)
+    ? null
+    : branchAdminBranchId(req.user);
+  // BRANCH_ADMIN เห็นได้เฉพาะพนักงานในสาขาตัวเอง — บังคับ override query param กันเผลอขอสาขาอื่น
+  const branchId = ownBranchId ?? req.query.branchId;
   const where = branchId ? "WHERE e.branch_id = ?" : "";
   const params = branchId ? [branchId] : [];
   const [rows] = await pool.query(
@@ -232,6 +241,12 @@ const listEmployees = asyncHandler(async (req, res) => {
 
 const createEmployee = asyncHandler(async (req, res) => {
   const body = employeeSchema.parse(req.body);
+  if (!isSuperAdmin(req.user)) {
+    const ownBranchId = branchAdminBranchId(req.user);
+    if (body.branchId !== ownBranchId) {
+      throw new AppError(403, "ສ້າງພະນັກງານໄດ້ສະເພາະສາຂາຂອງຕົນເອງ");
+    }
+  }
   const [result] = await pool.query(
     `INSERT INTO employees (employee_code, full_name, department_id, branch_id, is_active)
      VALUES (?, ?, ?, ?, ?)`,
@@ -251,6 +266,20 @@ const createEmployee = asyncHandler(async (req, res) => {
 
 const updateEmployee = asyncHandler(async (req, res) => {
   const body = employeeSchema.partial().parse(req.body);
+  if (!isSuperAdmin(req.user)) {
+    const ownBranchId = branchAdminBranchId(req.user);
+    const [existing] = await pool.query(
+      "SELECT branch_id FROM employees WHERE id = ?",
+      [req.params.id],
+    );
+    if (!existing.length) throw new AppError(404, "ບໍ່ພົບພະນັກງານນີ້");
+    if (existing[0].branch_id !== ownBranchId) {
+      throw new AppError(403, "ແກ້ໄຂໄດ້ສະເພາະພະນັກງານໃນສາຂາຂອງຕົນເອງ");
+    }
+    if (body.branchId !== undefined && body.branchId !== ownBranchId) {
+      throw new AppError(403, "ຍ້າຍພະນັກງານຂ້າມສາຂາໄດ້ສະເພາະ Super Admin");
+    }
+  }
   await partialUpdate(pool, "employees", req.params.id, {
     employee_code: body.employeeCode,
     full_name: body.fullName,
@@ -277,17 +306,38 @@ const userSchema = z.object({
 });
 
 const listUsers = asyncHandler(async (req, res) => {
+  const ownBranchId = isSuperAdmin(req.user)
+    ? null
+    : branchAdminBranchId(req.user);
+  const where = ownBranchId ? "WHERE e.branch_id = ?" : "";
+  const params = ownBranchId ? [ownBranchId] : [];
   const [rows] = await pool.query(
     `SELECT u.id, u.username, u.is_active, u.created_at,
-            e.id AS employee_id, e.full_name, e.employee_code
+            e.id AS employee_id, e.full_name, e.employee_code, e.branch_id
      FROM users u JOIN employees e ON e.id = u.employee_id
+     ${where}
      ORDER BY u.id`,
+    params,
   );
   res.json(rows);
 });
 
+async function assertEmployeeInOwnBranch(req, employeeId) {
+  if (isSuperAdmin(req.user)) return;
+  const ownBranchId = branchAdminBranchId(req.user);
+  const [rows] = await pool.query(
+    "SELECT branch_id FROM employees WHERE id = ?",
+    [employeeId],
+  );
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບພະນັກງານນີ້");
+  if (rows[0].branch_id !== ownBranchId) {
+    throw new AppError(403, "ຈັດການຜູ້ໃຊ້ໄດ້ສະເພາະພະນັກງານໃນສາຂາຂອງຕົນເອງ");
+  }
+}
+
 const createUser = asyncHandler(async (req, res) => {
   const body = userSchema.parse(req.body);
+  await assertEmployeeInOwnBranch(req, body.employeeId);
   const passwordHash = await bcrypt.hash(body.password, 10);
   const [result] = await pool.query(
     `INSERT INTO users (employee_id, username, password_hash, is_active)
@@ -308,6 +358,18 @@ const updateUserSchema = z.object({
 
 const updateUser = asyncHandler(async (req, res) => {
   const body = updateUserSchema.parse(req.body);
+  if (!isSuperAdmin(req.user)) {
+    const [existing] = await pool.query(
+      `SELECT e.branch_id FROM users u
+       JOIN employees e ON e.id = u.employee_id
+       WHERE u.id = ?`,
+      [req.params.id],
+    );
+    if (!existing.length) throw new AppError(404, "ບໍ່ພົບຜູ້ໃຊ້ນີ້");
+    if (existing[0].branch_id !== branchAdminBranchId(req.user)) {
+      throw new AppError(403, "ຈັດການຜູ້ໃຊ້ໄດ້ສະເພາະຄົນໃນສາຂາຂອງຕົນເອງ");
+    }
+  }
   const passwordHash = body.password
     ? await bcrypt.hash(body.password, 10)
     : undefined;
@@ -345,14 +407,28 @@ const userRoleSchema = z.object({
 
 const listUserRoles = asyncHandler(async (req, res) => {
   const { userId } = req.query;
-  const where = userId ? "WHERE ur.user_id = ?" : "";
-  const params = userId ? [userId] : [];
+  const conditions = [];
+  const params = [];
+  if (userId) {
+    conditions.push("ur.user_id = ?");
+    params.push(userId);
+  }
+  const ownBranchId = isSuperAdmin(req.user)
+    ? null
+    : branchAdminBranchId(req.user);
+  if (ownBranchId) {
+    conditions.push("e.branch_id = ?");
+    params.push(ownBranchId);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const [rows] = await pool.query(
     `SELECT ur.id, ur.user_id, ur.branch_id, ur.warehouse_id,
             b.name AS branch_name, w.name AS warehouse_name,
             r.code AS role_code, r.name AS role_name
      FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
+     JOIN users u ON u.id = ur.user_id
+     JOIN employees e ON e.id = u.employee_id
      LEFT JOIN branches b ON b.id = ur.branch_id
      LEFT JOIN warehouses w ON w.id = ur.warehouse_id
      ${where}
@@ -368,6 +444,26 @@ const assignUserRole = asyncHandler(async (req, res) => {
   const body = userRoleSchema.parse(req.body);
   const branchId = body.branchId ?? null;
   const warehouseId = body.warehouseId ?? null;
+
+  if (!isSuperAdmin(req.user)) {
+    // BRANCH_ADMIN มอบสิทธิ์ได้เฉพาะ WAREHOUSE_STAFF ในสาขาตัวเองเท่านั้น (ไม่ให้ตั้ง Branch Admin/Super Admin คนอื่น)
+    const [roleRows] = await pool.query("SELECT code FROM roles WHERE id = ?", [
+      body.roleId,
+    ]);
+    if (!roleRows.length) throw new AppError(404, "ບໍ່ພົບສິດທິນີ້");
+    if (roleRows[0].code !== "WAREHOUSE_STAFF" || branchId !== null) {
+      throw new AppError(403, "ມອບໄດ້ສະເພາະສິດທິ Warehouse Staff ເທົ່ານັ້ນ");
+    }
+    if (!warehouseId || !(await userCanAccessWarehouse(req.user, warehouseId))) {
+      throw new AppError(403, "ມອບສິດທິໄດ້ສະເພາະຄັງໃນສາຂາຂອງຕົນເອງ");
+    }
+    const [targetUserRows] = await pool.query(
+      "SELECT employee_id FROM users WHERE id = ?",
+      [body.userId],
+    );
+    if (!targetUserRows.length) throw new AppError(404, "ບໍ່ພົບຜູ້ໃຊ້ນີ້");
+    await assertEmployeeInOwnBranch(req, targetUserRows[0].employee_id);
+  }
 
   const [existing] = await pool.query(
     `SELECT id FROM user_roles
@@ -390,6 +486,22 @@ const assignUserRole = asyncHandler(async (req, res) => {
 });
 
 const revokeUserRole = asyncHandler(async (req, res) => {
+  if (!isSuperAdmin(req.user)) {
+    const [rows] = await pool.query(
+      `SELECT ur.warehouse_id, r.code AS role_code
+       FROM user_roles ur
+       JOIN roles r ON r.id = ur.role_id
+       WHERE ur.id = ?`,
+      [req.params.id],
+    );
+    if (!rows.length) throw new AppError(404, "ບໍ່ພົບສິດທິນີ້");
+    if (
+      rows[0].role_code !== "WAREHOUSE_STAFF" ||
+      !(await userCanAccessWarehouse(req.user, rows[0].warehouse_id))
+    ) {
+      throw new AppError(403, "ຖອນສິດທິໄດ້ສະເພາະ Warehouse Staff ໃນສາຂາຂອງຕົນເອງ");
+    }
+  }
   const [result] = await pool.query("DELETE FROM user_roles WHERE id = ?", [
     req.params.id,
   ]);

@@ -11,6 +11,7 @@ const requisitionsRoutes = require("./requisitionsRoutes");
 const stockTakesRoutes = require("./stockTakesRoutes");
 const reportsRoutes = require("./reportsRoutes");
 const settingsRoutes = require("./settingsRoutes");
+const stockUsageRoutes = require("./stockUsageRoutes");
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use("/branch-requests", branchRequestsRoutes);
 router.use("/requisitions", requisitionsRoutes);
 router.use("/stock-takes", stockTakesRoutes);
 router.use("/reports", reportsRoutes);
+router.use("/stock-usages", stockUsageRoutes);
 
 module.exports = router;

@@ -17,6 +17,7 @@ import ReportsPage from "./pages/ReportsPage";
 import OrganizationPage from "./pages/OrganizationPage";
 import CatalogPage from "./pages/CatalogPage";
 import CurrencyPage from "./pages/CurrencyPage";
+import StockUsagePage from "./pages/StockUsagePage";
 
 export default function App() {
   return (
@@ -50,8 +51,15 @@ export default function App() {
 
           <Route path="/reports" element={<ReportsPage />} />
 
-          <Route element={<ProtectedRoute roles={["SUPER_ADMIN"]} />}>
+          <Route path="/stock-usages" element={<StockUsagePage />} />
+
+          <Route
+            element={<ProtectedRoute roles={["SUPER_ADMIN", "BRANCH_ADMIN"]} />}
+          >
             <Route path="/organization" element={<OrganizationPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={["SUPER_ADMIN"]} />}>
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/currency" element={<CurrencyPage />} />
           </Route>

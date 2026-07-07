@@ -111,16 +111,19 @@ export default function BranchRequestDetailPage() {
         <h2 className="text-xl font-bold text-gray-800">
           ຄຳຂໍເບີກ #{request.id}
         </h2>
-        <StatusBadge status={request.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={request.request_type} />
+          <StatusBadge status={request.status} />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-5 mb-6 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
         <div>
-          <div className="text-gray-500">ຈາກຄັງ (HQ)</div>
+          <div className="text-gray-500">ຈາກຄັງ</div>
           <div className="font-medium">{request.from_warehouse_name}</div>
         </div>
         <div>
-          <div className="text-gray-500">ໄປຄັງ (ສາຂາ)</div>
+          <div className="text-gray-500">ໄປຄັງ</div>
           <div className="font-medium">{request.to_warehouse_name}</div>
         </div>
         <div>

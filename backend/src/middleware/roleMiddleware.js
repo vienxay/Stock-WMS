@@ -49,4 +49,32 @@ function requireWarehouseAccess(getWarehouseId) {
   };
 }
 
-module.exports = { requireRole, requireWarehouseAccess, userCanAccessWarehouse };
+function isSuperAdmin(user) {
+  return (user?.roles || []).some((r) => r.code === "SUPER_ADMIN");
+}
+
+// ใช้สำหรับสโคป endpoint จัดการพนักงาน/ผู้ใช้/สิทธิ์ ให้ BRANCH_ADMIN เห็น/แก้ไขได้เฉพาะสาขาตัวเอง
+function branchAdminBranchId(user) {
+  const role = (user?.roles || []).find((r) => r.code === "BRANCH_ADMIN");
+  return role ? Number(role.branchId) : null;
+}
+
+// คืนค่า warehouseId เฉพาะเมื่อ user มีแค่สิทธิ์ WAREHOUSE_STAFF เท่านั้น (ไม่มี SUPER_ADMIN/BRANCH_ADMIN เลย)
+// ใช้บังคับ scope รายงาน/list endpoint ให้เห็นเฉพาะคลังตัวเอง โดยไม่กระทบพฤติกรรมของ 2 ระดับที่สูงกว่า
+function warehouseStaffWarehouseId(user) {
+  const roles = user?.roles || [];
+  if (roles.some((r) => r.code === "SUPER_ADMIN" || r.code === "BRANCH_ADMIN")) {
+    return null;
+  }
+  const role = roles.find((r) => r.code === "WAREHOUSE_STAFF");
+  return role ? Number(role.warehouseId) : null;
+}
+
+module.exports = {
+  requireRole,
+  requireWarehouseAccess,
+  userCanAccessWarehouse,
+  isSuperAdmin,
+  branchAdminBranchId,
+  warehouseStaffWarehouseId,
+};

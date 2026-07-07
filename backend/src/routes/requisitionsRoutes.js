@@ -11,7 +11,7 @@ router.get("/", ctrl.listRequisitions);
 router.get("/:id", ctrl.getRequisition);
 router.post(
   "/",
-  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
+  requireRole("WAREHOUSE_STAFF"),
   ctrl.createRequisition,
 );
 router.put(

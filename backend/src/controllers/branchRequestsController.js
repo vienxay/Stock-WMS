@@ -3,7 +3,10 @@ const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { recordMovement } = require("../services/stockMovementService");
-const { userCanAccessWarehouse } = require("../middleware/roleMiddleware");
+const {
+  userCanAccessWarehouse,
+  warehouseStaffWarehouseId,
+} = require("../middleware/roleMiddleware");
 
 const createRequestSchema = z.object({
   fromWarehouseId: z.number().int().positive(),
@@ -59,19 +62,26 @@ async function findRequestOr404(runner, id) {
 
 const listRequests = asyncHandler(async (req, res) => {
   const { status, toWarehouseId, fromWarehouseId } = req.query;
+  const ownWarehouseId = warehouseStaffWarehouseId(req.user);
   const conditions = [];
   const params = [];
   if (status) {
     conditions.push("status = ?");
     params.push(status);
   }
-  if (toWarehouseId) {
-    conditions.push("to_warehouse_id = ?");
-    params.push(toWarehouseId);
-  }
-  if (fromWarehouseId) {
-    conditions.push("from_warehouse_id = ?");
-    params.push(fromWarehouseId);
+  if (ownWarehouseId) {
+    // Warehouse Staff ล้วนๆ เห็นได้เฉพาะรายการที่ตัวเองเป็นต้นทางหรือปลายทาง ไม่สนใจ query param ที่ส่งมา
+    conditions.push("(from_warehouse_id = ? OR to_warehouse_id = ?)");
+    params.push(ownWarehouseId, ownWarehouseId);
+  } else {
+    if (toWarehouseId) {
+      conditions.push("to_warehouse_id = ?");
+      params.push(toWarehouseId);
+    }
+    if (fromWarehouseId) {
+      conditions.push("from_warehouse_id = ?");
+      params.push(fromWarehouseId);
+    }
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -99,24 +109,35 @@ const getRequest = asyncHandler(async (req, res) => {
   res.json({ ...request, items });
 });
 
-// คำขอเบิกจากสาขาไปยัง HQ — ต้อง from = คลังส่วนกลาง, to = คลังสาขา, และเป็นคลังประเภทเดียวกัน
+// คำขอเบิก 2 แบบ: SUPPLY (จาก HQ ไปสาขา ต้อง type เดียวกัน) หรือ TRANSFER (ข้ามสาขา ไม่ผ่าน HQ)
 const createRequest = asyncHandler(async (req, res) => {
   const body = createRequestSchema.parse(req.body);
 
   const [warehouses] = await pool.query(
-    "SELECT id, is_central, warehouse_type_id FROM warehouses WHERE id IN (?, ?)",
+    "SELECT id, branch_id, is_central, warehouse_type_id FROM warehouses WHERE id IN (?, ?)",
     [body.fromWarehouseId, body.toWarehouseId],
   );
   const from = warehouses.find((w) => w.id === body.fromWarehouseId);
   const to = warehouses.find((w) => w.id === body.toWarehouseId);
   if (!from || !to) throw new AppError(404, "ບໍ່ພົບຄັງຕົ້ນທາງ ຫຼືປາຍທາງ");
-  if (!from.is_central)
-    throw new AppError(400, "ຄັງຕົ້ນທາງຕ້ອງເປັນຄັງສ່ວນກາງ (HQ)");
   if (to.is_central)
-    throw new AppError(400, "ຄັງປາຍທາງຕ້ອງເປັນຄັງສາຂາ ບໍ່ແມ່ນຄັງສ່ວນກາງ");
-  if (from.warehouse_type_id !== to.warehouse_type_id) {
-    throw new AppError(400, "ຄັງຕົ້ນທາງແລະປາຍທາງຕ້ອງເປັນຄັງປະເພດດຽວກັນ");
+    throw new AppError(400, "ຄັງປາຍທາງຕ້ອງບໍ່ແມ່ນຄັງສ່ວນກາງ");
+
+  let requestType;
+  if (from.is_central) {
+    if (from.warehouse_type_id !== to.warehouse_type_id) {
+      throw new AppError(400, "ຄັງຕົ້ນທາງແລະປາຍທາງຕ້ອງເປັນຄັງປະເພດດຽວກັນ");
+    }
+    requestType = "SUPPLY";
+  } else if (from.branch_id !== to.branch_id) {
+    requestType = "TRANSFER";
+  } else {
+    throw new AppError(
+      400,
+      "ຄັງຕົ້ນທາງຕ້ອງເປັນຄັງສ່ວນກາງ (HQ) ຫຼືເປັນຄັງຂອງສາຂາອື່ນ — ໂອນລະຫວ່າງຄັງໃນສາຂາດຽວກັນໃຫ້ໃຊ້ໂອນຍ້າຍດ່ວນແທນ",
+    );
   }
+
   if (!(await userCanAccessWarehouse(req.user, body.toWarehouseId))) {
     throw new AppError(403, "ບໍ່ມີສິດທິສ້າງຄຳຂໍເບີກໃຫ້ຄັງນີ້");
   }
@@ -126,11 +147,12 @@ const createRequest = asyncHandler(async (req, res) => {
     await conn.beginTransaction();
 
     const [result] = await conn.query(
-      `INSERT INTO branch_requests (from_warehouse_id, to_warehouse_id, requested_by, note)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO branch_requests (from_warehouse_id, to_warehouse_id, request_type, requested_by, note)
+       VALUES (?, ?, ?, ?, ?)`,
       [
         body.fromWarehouseId,
         body.toWarehouseId,
+        requestType,
         req.user.sub,
         body.note ?? null,
       ],
@@ -169,8 +191,13 @@ const approveRequest = asyncHandler(async (req, res) => {
     if (request.status !== "PENDING") {
       throw new AppError(400, "ຄຳຂໍນີ້ຖືກດຳເນີນການໄປແລ້ວ");
     }
-    if (!(await userCanAccessWarehouse(req.user, request.to_warehouse_id))) {
-      throw new AppError(403, "ບໍ່ມີສິດທິອະນຸມັດຄຳຂໍໃຫ້ຄັງນີ້");
+    // SUPPLY: ผู้อนุมัติต้องคุมคลังปลายทาง (สาขาที่ขอ) / TRANSFER: ผู้อนุมัติต้องคุมคลังต้นทาง (สาขาที่ถูกขอ)
+    const approverWarehouseId =
+      request.request_type === "TRANSFER"
+        ? request.from_warehouse_id
+        : request.to_warehouse_id;
+    if (!(await userCanAccessWarehouse(req.user, approverWarehouseId))) {
+      throw new AppError(403, "ບໍ່ມີສິດທິອະນຸມັດຄຳຂໍນີ້");
     }
 
     for (const item of body.items) {
@@ -239,7 +266,11 @@ const rejectRequest = asyncHandler(async (req, res) => {
   if (request.status !== "PENDING") {
     throw new AppError(400, "ຄຳຂໍນີ້ຖືກດຳເນີນການໄປແລ້ວ");
   }
-  if (!(await userCanAccessWarehouse(req.user, request.to_warehouse_id))) {
+  const approverWarehouseId =
+    request.request_type === "TRANSFER"
+      ? request.from_warehouse_id
+      : request.to_warehouse_id;
+  if (!(await userCanAccessWarehouse(req.user, approverWarehouseId))) {
     throw new AppError(403, "ບໍ່ມີສິດທິປະຕິເສດຄຳຂໍນີ້");
   }
   await pool.query(

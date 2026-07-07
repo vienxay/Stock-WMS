@@ -24,12 +24,15 @@ async function sendAsExcel(res, sheetName, columns, rows, filename) {
 // ---------------------------------------------------------------------
 
 const getStockBalanceReport = asyncHandler(async (req, res) => {
-  const { warehouseId, categoryId, format } = req.query;
+  const { warehouseId, branchId, categoryId, format } = req.query;
   const conditions = [];
   const params = [];
   if (warehouseId) {
     conditions.push("sb.warehouse_id = ?");
     params.push(warehouseId);
+  } else if (branchId) {
+    conditions.push("w.branch_id = ?");
+    params.push(branchId);
   }
   if (categoryId) {
     conditions.push("p.category_id = ?");
@@ -82,6 +85,7 @@ const getMovementsReport = asyncHandler(async (req, res) => {
   const {
     productId,
     warehouseId,
+    branchId,
     movementType,
     dateFrom,
     dateTo,
@@ -97,6 +101,9 @@ const getMovementsReport = asyncHandler(async (req, res) => {
   if (warehouseId) {
     conditions.push("sm.warehouse_id = ?");
     params.push(warehouseId);
+  } else if (branchId) {
+    conditions.push("w.branch_id = ?");
+    params.push(branchId);
   }
   if (movementType) {
     conditions.push("sm.movement_type = ?");

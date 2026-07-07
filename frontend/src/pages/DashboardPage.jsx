@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ResponsiveContainer,
@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { listProducts } from "../api/products";
 import { getStockBalanceReport, getMovementsReport } from "../api/reports";
+import { listBranches, listWarehouses } from "../api/organization";
 import { useAuth } from "../context/AuthContext";
 import Spinner from "../components/ui/Spinner";
+import { selectClass } from "../components/ui/FormField";
 
 const LAO_MONTHS = [
   "ມ.ກ",
@@ -131,6 +133,40 @@ function StatCard({
 export default function DashboardPage() {
   const { user } = useAuth();
 
+  const roles = user?.roles || [];
+  const isSuperAdmin = roles.some((r) => r.code === "SUPER_ADMIN");
+  const branchAdminRole = roles.find((r) => r.code === "BRANCH_ADMIN");
+  const warehouseStaffRole = roles.find((r) => r.code === "WAREHOUSE_STAFF");
+  // ล็อกขอบเขตอัตโนมัติตามสิทธิ์: Warehouse Staff เห็นคลังตัวเอง, Branch Admin เห็นสาขาตัวเอง, Super Admin เลือกได้ทุกอย่าง
+  const lockedWarehouseId =
+    !isSuperAdmin && warehouseStaffRole ? warehouseStaffRole.warehouseId : null;
+  const lockedBranchId =
+    !isSuperAdmin && branchAdminRole ? branchAdminRole.branchId : null;
+
+  const [selectedBranchId, setSelectedBranchId] = useState(
+    lockedBranchId ? String(lockedBranchId) : "",
+  );
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState(
+    lockedWarehouseId ? String(lockedWarehouseId) : "",
+  );
+
+  const { data: branches } = useQuery({
+    queryKey: ["branches"],
+    queryFn: listBranches,
+  });
+  const { data: warehouses } = useQuery({
+    queryKey: ["warehouses"],
+    queryFn: () => listWarehouses(),
+  });
+  const warehousesInSelectedBranch = warehouses?.filter(
+    (w) => !selectedBranchId || String(w.branch_id) === selectedBranchId,
+  );
+
+  const effectiveWarehouseId = selectedWarehouseId || lockedWarehouseId || undefined;
+  const effectiveBranchId = effectiveWarehouseId
+    ? undefined
+    : selectedBranchId || lockedBranchId || undefined;
+
   const now = new Date();
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -141,20 +177,40 @@ export default function DashboardPage() {
     queryFn: () => listProducts({ limit: 200 }),
   });
   const stockBalanceQuery = useQuery({
-    queryKey: ["report-stock-balance-all"],
-    queryFn: () => getStockBalanceReport({}),
+    queryKey: [
+      "report-stock-balance-all",
+      effectiveWarehouseId,
+      effectiveBranchId,
+    ],
+    queryFn: () =>
+      getStockBalanceReport({
+        warehouseId: effectiveWarehouseId,
+        branchId: effectiveBranchId,
+      }),
   });
   const movementsQuery = useQuery({
-    queryKey: ["dashboard-movements", sixMonthsAgo.toISOString().slice(0, 10)],
+    queryKey: [
+      "dashboard-movements",
+      sixMonthsAgo.toISOString().slice(0, 10),
+      effectiveWarehouseId,
+      effectiveBranchId,
+    ],
     queryFn: () =>
       getMovementsReport({
         dateFrom: sixMonthsAgo.toISOString().slice(0, 10),
+        warehouseId: effectiveWarehouseId,
+        branchId: effectiveBranchId,
         limit: 500,
       }),
   });
   const recentQuery = useQuery({
-    queryKey: ["dashboard-recent"],
-    queryFn: () => getMovementsReport({ limit: 5 }),
+    queryKey: ["dashboard-recent", effectiveWarehouseId, effectiveBranchId],
+    queryFn: () =>
+      getMovementsReport({
+        warehouseId: effectiveWarehouseId,
+        branchId: effectiveBranchId,
+        limit: 5,
+      }),
   });
 
   const loading =
@@ -253,7 +309,56 @@ export default function DashboardPage() {
       <h2 className="text-xl font-bold text-gray-800 mb-1">
         ສະບາຍດີ, {user?.fullName}
       </h2>
-      <p className="text-gray-500 text-sm mb-6">ພາບລວມລະບົບຄັງສິນຄ້າ</p>
+      <p className="text-gray-500 text-sm mb-4">ພາບລວມລະບົບຄັງສິນຄ້າ</p>
+
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        {isSuperAdmin ? (
+          <select
+            className={`${selectClass} max-w-xs`}
+            value={selectedBranchId}
+            onChange={(e) => {
+              setSelectedBranchId(e.target.value);
+              setSelectedWarehouseId("");
+            }}
+          >
+            <option value="">-- ທຸກສາຂາ --</option>
+            {branches?.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        ) : lockedBranchId ? (
+          <span className="text-sm text-gray-500">
+            ສາຂາ:{" "}
+            <strong className="text-gray-700">
+              {branches?.find((b) => b.id === lockedBranchId)?.name ?? "-"}
+            </strong>
+          </span>
+        ) : null}
+
+        {!lockedWarehouseId ? (
+          <select
+            className={`${selectClass} max-w-xs`}
+            value={selectedWarehouseId}
+            onChange={(e) => setSelectedWarehouseId(e.target.value)}
+          >
+            <option value="">-- ທຸກຄັງ{selectedBranchId ? "ໃນສາຂານີ້" : ""} --</option>
+            {warehousesInSelectedBranch?.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-sm text-gray-500">
+            ຄັງ:{" "}
+            <strong className="text-gray-700">
+              {warehouses?.find((w) => w.id === lockedWarehouseId)?.name ?? "-"}
+            </strong>
+          </span>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <StatCard

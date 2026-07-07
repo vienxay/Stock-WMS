@@ -22,7 +22,7 @@ const EMPTY_FORM = {
   purpose: "",
   items: [{ ...EMPTY_ITEM }],
 };
-const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED", "ISSUED"];
+const STATUS_OPTIONS = ["PENDING", "REJECTED", "ISSUED", "RECEIVED"];
 
 export default function RequisitionsPage() {
   const { hasRole, user } = useAuth();

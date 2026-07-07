@@ -1,6 +1,7 @@
 import Tabs from "../components/ui/Tabs";
 import BranchesTab from "./organization/BranchesTab";
 import WarehousesTab from "./organization/WarehousesTab";
+import LocationsTab from "./organization/LocationsTab";
 import DepartmentsTab from "./organization/DepartmentsTab";
 import EmployeesTab from "./organization/EmployeesTab";
 import UsersTab from "./organization/UsersTab";
@@ -16,6 +17,11 @@ export default function OrganizationPage() {
       ? [
           { key: "branches", label: "ສາຂາ", component: <BranchesTab /> },
           { key: "warehouses", label: "ຄັງ", component: <WarehousesTab /> },
+          {
+            key: "locations",
+            label: "ຕໍາແໜ່ງເກັບມ້ຽນ",
+            component: <LocationsTab />,
+          },
           {
             key: "departments",
             label: "ພະແນກ",

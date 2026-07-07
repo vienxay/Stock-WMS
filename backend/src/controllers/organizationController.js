@@ -154,10 +154,14 @@ const locationSchema = z.object({
 
 const listLocations = asyncHandler(async (req, res) => {
   const { warehouseId } = req.query;
-  const where = warehouseId ? "WHERE warehouse_id = ?" : "";
+  const where = warehouseId ? "WHERE l.warehouse_id = ?" : "";
   const params = warehouseId ? [warehouseId] : [];
   const [rows] = await pool.query(
-    `SELECT * FROM locations ${where} ORDER BY id`,
+    `SELECT l.*, w.name AS warehouse_name
+     FROM locations l
+     JOIN warehouses w ON w.id = l.warehouse_id
+     ${where}
+     ORDER BY l.id`,
     params,
   );
   res.json(rows);
@@ -173,6 +177,29 @@ const createLocation = asyncHandler(async (req, res) => {
     result.insertId,
   ]);
   res.status(201).json(rows[0]);
+});
+
+const updateLocation = asyncHandler(async (req, res) => {
+  const body = locationSchema.partial().parse(req.body);
+  await partialUpdate(pool, "locations", req.params.id, {
+    warehouse_id: body.warehouseId,
+    zone: body.zone,
+    shelf: body.shelf,
+    bin: body.bin,
+  });
+  const [rows] = await pool.query("SELECT * FROM locations WHERE id = ?", [
+    req.params.id,
+  ]);
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບຕໍາແໜ່ງເກັບມ້ຽນນີ້");
+  res.json(rows[0]);
+});
+
+const deleteLocation = asyncHandler(async (req, res) => {
+  const [result] = await pool.query("DELETE FROM locations WHERE id = ?", [
+    req.params.id,
+  ]);
+  if (!result.affectedRows) throw new AppError(404, "ບໍ່ພົບຕໍາແໜ່ງເກັບມ້ຽນນີ້");
+  res.status(204).send();
 });
 
 // ---------------------------------------------------------------------
@@ -520,6 +547,8 @@ module.exports = {
   updateWarehouse,
   listLocations,
   createLocation,
+  updateLocation,
+  deleteLocation,
   listDepartments,
   createDepartment,
   listEmployees,

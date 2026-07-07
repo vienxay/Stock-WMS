@@ -1,30 +1,25 @@
-import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getRequisition,
   approveRequisition,
   rejectRequisition,
-  issueRequisition,
+  confirmReceipt,
 } from "../api/requisitions";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
-import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
 import StatusBadge from "../components/ui/StatusBadge";
-import { inputClass } from "../components/ui/FormField";
 
 export default function RequisitionDetailPage() {
   const { id } = useParams();
   const { hasRole } = useAuth();
   const queryClient = useQueryClient();
-  const [issueModalOpen, setIssueModalOpen] = useState(false);
-  const [issueQtys, setIssueQtys] = useState({});
 
   const canApprove = hasRole("SUPER_ADMIN", "BRANCH_ADMIN");
-  const canIssue = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canConfirmReceipt = hasRole("WAREHOUSE_STAFF");
 
   const { data: requisition, isLoading } = useQuery({
     queryKey: ["requisition", id],
@@ -39,7 +34,7 @@ export default function RequisitionDetailPage() {
   const approveMutation = useMutation({
     mutationFn: () => approveRequisition(id),
     onSuccess: () => {
-      toastSuccess("ອະນຸມັດໃບເບີກແລ້ວ");
+      toastSuccess("ອະນຸມັດ ແລະ ຈ່າຍເຄື່ອງແລ້ວ");
       invalidate();
     },
     onError: (err) => toastError(apiErrorMessage(err)),
@@ -54,12 +49,11 @@ export default function RequisitionDetailPage() {
     onError: (err) => toastError(apiErrorMessage(err)),
   });
 
-  const issueMutation = useMutation({
-    mutationFn: (items) => issueRequisition(id, { items }),
+  const confirmReceiptMutation = useMutation({
+    mutationFn: () => confirmReceipt(id),
     onSuccess: () => {
-      toastSuccess("ຈ່າຍເຄື່ອງແລ້ວ");
+      toastSuccess("ຢືນຢັນຮັບເຄື່ອງແລ້ວ");
       invalidate();
-      setIssueModalOpen(false);
     },
     onError: (err) => toastError(apiErrorMessage(err)),
   });
@@ -67,6 +61,7 @@ export default function RequisitionDetailPage() {
   const handleApprove = async () => {
     const result = await confirmAction({
       title: "ອະນຸມັດໃບເບີກນີ້?",
+      text: "ລະບົບຈະຈ່າຍເຄື່ອງຕາມຈຳນວນທີ່ຂໍເບີກມາ ແລະຕັດສະຕັອກທັນທີ",
       icon: "question",
       confirmButtonColor: "#2563eb",
     });
@@ -78,23 +73,11 @@ export default function RequisitionDetailPage() {
     if (result.isConfirmed) rejectMutation.mutate();
   };
 
-  const openIssue = () => {
-    const defaults = {};
-    requisition.items.forEach((it) => {
-      defaults[it.id] = it.quantity_requested;
+  const handleConfirmReceipt = async () => {
+    const result = await confirmAction({
+      title: "ຢືນຢັນວ່າໄດ້ຮັບເຄື່ອງແລ້ວ?",
     });
-    setIssueQtys(defaults);
-    setIssueModalOpen(true);
-  };
-
-  const handleIssueSubmit = (e) => {
-    e.preventDefault();
-    issueMutation.mutate(
-      Object.entries(issueQtys).map(([itemId, quantityIssued]) => ({
-        itemId: Number(itemId),
-        quantityIssued: Number(quantityIssued),
-      })),
-    );
+    if (result.isConfirmed) confirmReceiptMutation.mutate();
   };
 
   if (isLoading || !requisition) return <Spinner />;
@@ -117,7 +100,7 @@ export default function RequisitionDetailPage() {
 
       <div className="bg-white rounded-lg shadow-sm p-5 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div>
-          <div className="text-gray-500">ຄັງ</div>
+          <div className="text-gray-500">ສາງ</div>
           <div className="font-medium">{requisition.warehouse_name}</div>
         </div>
         <div>
@@ -168,53 +151,10 @@ export default function RequisitionDetailPage() {
             </Button>
           </>
         )}
-        {requisition.status === "APPROVED" && canIssue && (
-          <Button onClick={openIssue}>ຮັບເຄື່ອງ</Button>
+        {requisition.status === "ISSUED" && canConfirmReceipt && (
+          <Button onClick={handleConfirmReceipt}>ຢືນຢັນຮັບເຄື່ອງ</Button>
         )}
       </div>
-
-      <Modal
-        open={issueModalOpen}
-        title="ຈ່າຍເຄື່ອງ"
-        onClose={() => setIssueModalOpen(false)}
-      >
-        <form onSubmit={handleIssueSubmit}>
-          <div className="space-y-3 mb-4">
-            {requisition.items.map((it) => (
-              <div
-                key={it.id}
-                className="flex items-center justify-between gap-3"
-              >
-                <span className="text-sm">
-                  {it.sku} — {it.product_name} (ຂໍ {it.quantity_requested})
-                </span>
-                <input
-                  type="number"
-                  step="0.01"
-                  className={`${inputClass} w-28`}
-                  value={issueQtys[it.id] ?? ""}
-                  onChange={(e) =>
-                    setIssueQtys({ ...issueQtys, [it.id]: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIssueModalOpen(false)}
-            >
-              ຍົກເລີກ
-            </Button>
-            <Button type="submit" disabled={issueMutation.isPending}>
-              ຢືນຢັນຮັບເຄື່ອງ
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

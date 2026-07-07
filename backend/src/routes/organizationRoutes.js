@@ -29,6 +29,8 @@ router.put(
 
 router.get("/locations", ctrl.listLocations);
 router.post("/locations", requireRole(), ctrl.createLocation);
+router.put("/locations/:id", requireRole(), ctrl.updateLocation);
+router.delete("/locations/:id", requireRole(), ctrl.deleteLocation);
 
 router.get("/departments", ctrl.listDepartments);
 router.post("/departments", requireRole(), ctrl.createDepartment);

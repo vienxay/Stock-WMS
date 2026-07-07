@@ -62,6 +62,9 @@ const listProducts = asyncHandler(async (req, res) => {
 
   const [rows] = await pool.query(
     `SELECT p.*, c.name_lo AS category_name,
+            ua.name_lo AS usage_area_name,
+            db.name AS default_branch_name,
+            re.full_name AS responsible_employee_name,
             pi.image_url AS primary_image_url,
             COALESCE(
               (SELECT SUM(sb.quantity) FROM stock_balance sb WHERE sb.product_id = p.id),
@@ -69,6 +72,9 @@ const listProducts = asyncHandler(async (req, res) => {
             ) AS total_quantity
      FROM products p
      LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN usage_areas ua ON ua.id = p.default_usage_area_id
+     LEFT JOIN branches db ON db.id = p.default_branch_id
+     LEFT JOIN employees re ON re.id = p.responsible_employee_id
      LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = TRUE
      ${where}
      ORDER BY p.id DESC
@@ -167,12 +173,25 @@ const lookupProduct = asyncHandler(async (req, res) => {
 });
 
 const getProduct = asyncHandler(async (req, res) => {
-  const product = await findProductOr404(req.params.id);
+  await findProductOr404(req.params.id);
+  const [rows] = await pool.query(
+    `SELECT p.*, c.name_lo AS category_name,
+            ua.name_lo AS usage_area_name,
+            db.name AS default_branch_name,
+            re.full_name AS responsible_employee_name
+     FROM products p
+     LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN usage_areas ua ON ua.id = p.default_usage_area_id
+     LEFT JOIN branches db ON db.id = p.default_branch_id
+     LEFT JOIN employees re ON re.id = p.responsible_employee_id
+     WHERE p.id = ?`,
+    [req.params.id],
+  );
   const [images] = await pool.query(
     "SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, id",
     [req.params.id],
   );
-  res.json({ ...product, images });
+  res.json({ ...rows[0], images });
 });
 
 // สต็อกคงเหลือของสินค้านี้ แยกตามคลัง

@@ -27,6 +27,10 @@ export const listLocations = (params) =>
   apiClient.get("/organization/locations", { params }).then((r) => r.data);
 export const createLocation = (body) =>
   apiClient.post("/organization/locations", body).then((r) => r.data);
+export const updateLocation = (id, body) =>
+  apiClient.put(`/organization/locations/${id}`, body).then((r) => r.data);
+export const deleteLocation = (id) =>
+  apiClient.delete(`/organization/locations/${id}`).then((r) => r.data);
 
 // Departments
 export const listDepartments = (params) =>

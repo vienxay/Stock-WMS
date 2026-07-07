@@ -11,11 +11,12 @@ import {
   getProductBarcode,
   getProductQrCode,
 } from '../api/products'
-import { listCategories } from '../api/catalog'
+import { listCategories, listUsageAreas } from '../api/catalog'
+import { listBranches, listEmployees } from '../api/organization'
 import { apiErrorMessage } from '../api/client'
 import { toastSuccess, toastError, confirmAction } from '../lib/toast'
 import { useAuth } from '../context/AuthContext'
-import { Package, Barcode, Tag, Layers, Ruler, Boxes, AlertTriangle, ImagePlus, Warehouse, Download } from 'lucide-react'
+import { Package, Barcode, Tag, Layers, Ruler, Boxes, AlertTriangle, ImagePlus, Warehouse, Download, MapPin, Building2, User } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import FormField, { inputClass, selectClass } from '../components/ui/FormField'
@@ -54,10 +55,18 @@ export default function ProductDetailPage() {
   const fileInputRef = useRef(null)
 
   const canManage = hasRole('BRANCH_ADMIN', 'WAREHOUSE_STAFF')
+  const canSeeEmployees = hasRole('SUPER_ADMIN', 'BRANCH_ADMIN')
 
   const { data: product, isLoading } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id) })
   const { data: stock } = useQuery({ queryKey: ['product-stock', id], queryFn: () => getProductStock(id) })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
+  const { data: usageAreas } = useQuery({ queryKey: ['usage-areas'], queryFn: () => listUsageAreas() })
+  const { data: branches } = useQuery({ queryKey: ['branches'], queryFn: () => listBranches() })
+  const { data: employees } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => listEmployees(),
+    enabled: canSeeEmployees,
+  })
 
   const barcodeUrl = useImageObjectUrl(['product-barcode', id], () => getProductBarcode(id))
   const qrCodeUrl = useImageObjectUrl(['product-qrcode', id], () => getProductQrCode(id))
@@ -119,6 +128,9 @@ export default function ProductDetailPage() {
       unitLo: product.unit_lo,
       reorderPoint: product.reorder_point ?? 0,
       isActive: !!product.is_active,
+      defaultUsageAreaId: product.default_usage_area_id || '',
+      defaultBranchId: product.default_branch_id || '',
+      responsibleEmployeeId: product.responsible_employee_id || '',
     })
     setEditing(true)
   }
@@ -129,6 +141,9 @@ export default function ProductDetailPage() {
       ...form,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
       reorderPoint: Number(form.reorderPoint) || 0,
+      defaultUsageAreaId: form.defaultUsageAreaId ? Number(form.defaultUsageAreaId) : null,
+      defaultBranchId: form.defaultBranchId ? Number(form.defaultBranchId) : null,
+      responsibleEmployeeId: form.responsibleEmployeeId ? Number(form.responsibleEmployeeId) : null,
     })
   }
 
@@ -259,6 +274,50 @@ export default function ProductDetailPage() {
                   onChange={(e) => setForm({ ...form, reorderPoint: e.target.value })}
                 />
               </FormField>
+              <FormField label="ພື້ນທີ່ໃຊ້ງານປົກກະຕິ">
+                <select
+                  className={selectClass}
+                  value={form.defaultUsageAreaId}
+                  onChange={(e) => setForm({ ...form, defaultUsageAreaId: e.target.value })}
+                >
+                  <option value="">-- ບໍ່ລະບຸ --</option>
+                  {usageAreas?.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name_lo}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="ໂຮງງານ/ສາຂາທີ່ຂຶ້ນທະບຽນ">
+                <select
+                  className={selectClass}
+                  value={form.defaultBranchId}
+                  onChange={(e) => setForm({ ...form, defaultBranchId: e.target.value })}
+                >
+                  <option value="">-- ບໍ່ລະບຸ --</option>
+                  {branches?.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              {canSeeEmployees && (
+                <FormField label="ຜູ້ຮັບຜິດຊອບ">
+                  <select
+                    className={selectClass}
+                    value={form.responsibleEmployeeId}
+                    onChange={(e) => setForm({ ...form, responsibleEmployeeId: e.target.value })}
+                  >
+                    <option value="">-- ບໍ່ລະບຸ --</option>
+                    {employees?.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.full_name} ({emp.employee_code})
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              )}
               <label className="flex items-center gap-2 text-sm mt-6">
                 <input
                   type="checkbox"
@@ -298,6 +357,15 @@ export default function ProductDetailPage() {
               </InfoRow>
               <InfoRow icon={AlertTriangle} label="ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ">
                 {product.reorder_point}
+              </InfoRow>
+              <InfoRow icon={MapPin} label="ພື້ນທີ່ໃຊ້ງານປົກກະຕິ">
+                {product.usage_area_name || '-'}
+              </InfoRow>
+              <InfoRow icon={Building2} label="ໂຮງງານ/ສາຂາທີ່ຂຶ້ນທະບຽນ">
+                {product.default_branch_name || '-'}
+              </InfoRow>
+              <InfoRow icon={User} label="ຜູ້ຮັບຜິດຊອບ">
+                {product.responsible_employee_name || '-'}
               </InfoRow>
             </div>
           )}

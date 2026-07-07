@@ -11,7 +11,8 @@ import {
   downloadImportTemplate,
   exportProducts,
 } from "../api/products";
-import { listCategories } from "../api/catalog";
+import { listCategories, listUsageAreas } from "../api/catalog";
+import { listBranches, listEmployees } from "../api/organization";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
@@ -32,6 +33,9 @@ const EMPTY_FORM = {
   categoryId: "",
   unitLo: "",
   reorderPoint: "0",
+  defaultUsageAreaId: "",
+  defaultBranchId: "",
+  responsibleEmployeeId: "",
 };
 
 export default function ProductsPage() {
@@ -63,6 +67,20 @@ export default function ProductsPage() {
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: () => listCategories(),
+  });
+  const { data: usageAreas } = useQuery({
+    queryKey: ["usage-areas"],
+    queryFn: () => listUsageAreas(),
+  });
+  const { data: branches } = useQuery({
+    queryKey: ["branches"],
+    queryFn: () => listBranches(),
+  });
+  const canSeeEmployees = hasRole("SUPER_ADMIN", "BRANCH_ADMIN");
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => listEmployees(),
+    enabled: canSeeEmployees,
   });
 
   const createMutation = useMutation({
@@ -143,6 +161,15 @@ export default function ProductsPage() {
       ...form,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
       reorderPoint: Number(form.reorderPoint) || 0,
+      defaultUsageAreaId: form.defaultUsageAreaId
+        ? Number(form.defaultUsageAreaId)
+        : null,
+      defaultBranchId: form.defaultBranchId
+        ? Number(form.defaultBranchId)
+        : null,
+      responsibleEmployeeId: form.responsibleEmployeeId
+        ? Number(form.responsibleEmployeeId)
+        : null,
     });
   };
 
@@ -500,6 +527,56 @@ export default function ProductsPage() {
               }
             />
           </FormField>
+          <FormField label="ພື້ນທີ່ໃຊ້ງານປົກກະຕິ">
+            <select
+              className={selectClass}
+              value={form.defaultUsageAreaId}
+              onChange={(e) =>
+                setForm({ ...form, defaultUsageAreaId: e.target.value })
+              }
+            >
+              <option value="">-- ບໍ່ລະບຸ --</option>
+              {usageAreas?.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name_lo}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="ໂຮງງານ/ສາຂາທີ່ຂຶ້ນທະບຽນ">
+            <select
+              className={selectClass}
+              value={form.defaultBranchId}
+              onChange={(e) =>
+                setForm({ ...form, defaultBranchId: e.target.value })
+              }
+            >
+              <option value="">-- ບໍ່ລະບຸ --</option>
+              {branches?.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          {canSeeEmployees && (
+            <FormField label="ຜູ້ຮັບຜິດຊອບ">
+              <select
+                className={selectClass}
+                value={form.responsibleEmployeeId}
+                onChange={(e) =>
+                  setForm({ ...form, responsibleEmployeeId: e.target.value })
+                }
+              >
+                <option value="">-- ບໍ່ລະບຸ --</option>
+                {employees?.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name} ({emp.employee_code})
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
           <div className="col-span-2 flex justify-end gap-2 mt-2">
             <Button
               type="button"

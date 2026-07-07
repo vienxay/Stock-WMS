@@ -24,10 +24,10 @@ router.put(
   requireRole("BRANCH_ADMIN"),
   ctrl.rejectRequisition,
 );
-router.post(
-  "/:id/issue",
-  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
-  ctrl.issueRequisition,
+router.put(
+  "/:id/confirm-receipt",
+  requireRole("WAREHOUSE_STAFF"),
+  ctrl.confirmReceipt,
 );
 
 module.exports = router;

@@ -22,17 +22,6 @@ const createRequisitionSchema = z.object({
     .min(1),
 });
 
-const issueSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        itemId: z.number().int().positive(),
-        quantityIssued: z.number().nonnegative(),
-      }),
-    )
-    .min(1),
-});
-
 async function findRequisitionOr404(runner, id) {
   const [rows] = await runner.query("SELECT * FROM requisitions WHERE id = ?", [
     id,
@@ -129,21 +118,57 @@ const createRequisition = asyncHandler(async (req, res) => {
   }
 });
 
-// หัวหน้าแผนก/ผู้อนุมัติ อนุมัติเป็นภาพรวม (จำนวนที่ให้จริงจะกำหนดตอน issue อีกที)
+// Branch Admin ອະນຸມັດ = ຈ່າຍເຄື່ອງທັນທີໃນຂັ້ນຕອນດຽວ ໂດຍໃຊ້ຈຳນວນທີ່ຂໍເບີກມາເປັ໊ະໆ (ບໍ່ມີການແກ້ໄຂຈຳນວນ)
+// ບໍ່ຕ້ອງກົດ "ຈ່າຍເຄື່ອງ" ແຍກອີກຂັ້ນຕອນຄືເກົ່າ — ອະນຸມັດແລ້ວ ສະຕັອກຫຼຸດທັນທີ, ຈາກນັ້ນລໍ Warehouse Staff ກົດຢືນຢັນຮັບເຄື່ອງ
 const approveRequisition = asyncHandler(async (req, res) => {
-  const requisition = await findRequisitionOr404(pool, req.params.id);
-  if (requisition.status !== "PENDING") {
-    throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const requisition = await findRequisitionOr404(conn, req.params.id);
+    if (requisition.status !== "PENDING") {
+      throw new AppError(400, "ໃບຂໍເບີກນີ້ຖືກດຳເນີນການໄປແລ້ວ");
+    }
+    if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
+      throw new AppError(403, "ບໍ່ມີສິດທິອະນຸມັດໃບຂໍເບີກນີ້");
+    }
+
+    const [items] = await conn.query(
+      "SELECT * FROM requisition_items WHERE requisition_id = ?",
+      [req.params.id],
+    );
+
+    for (const item of items) {
+      await conn.query(
+        "UPDATE requisition_items SET quantity_issued = quantity_requested WHERE id = ?",
+        [item.id],
+      );
+
+      await recordMovement(conn, {
+        productId: item.product_id,
+        warehouseId: requisition.warehouse_id,
+        movementType: "ISSUE",
+        quantity: -Number(item.quantity_requested),
+        referenceTable: "requisitions",
+        referenceId: requisition.id,
+        createdBy: req.user.sub,
+      });
+    }
+
+    await conn.query(
+      `UPDATE requisitions SET status = 'ISSUED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
+      [req.user.sub, req.params.id],
+    );
+
+    await conn.commit();
+    const updated = await findRequisitionOr404(pool, req.params.id);
+    res.json(updated);
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-  if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
-    throw new AppError(403, "ບໍ່ມີສິດທິອະນຸມັດໃບຂໍເບີກນີ້");
-  }
-  await pool.query(
-    `UPDATE requisitions SET status = 'APPROVED', approved_by = ?, approved_at = NOW() WHERE id = ?`,
-    [req.user.sub, req.params.id],
-  );
-  const updated = await findRequisitionOr404(pool, req.params.id);
-  res.json(updated);
 });
 
 const rejectRequisition = asyncHandler(async (req, res) => {
@@ -162,61 +187,21 @@ const rejectRequisition = asyncHandler(async (req, res) => {
   res.json(updated);
 });
 
-// เจ้าหน้าที่คลังสาขาจ่ายของจริง — จำนวนที่จ่ายอาจน้อยกว่าที่ขอถ้าของไม่พอ
-const issueRequisition = asyncHandler(async (req, res) => {
-  const body = issueSchema.parse(req.body);
-
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-
-    const requisition = await findRequisitionOr404(conn, req.params.id);
-    if (requisition.status !== "APPROVED") {
-      throw new AppError(400, "ຕ້ອງອະນຸມັດໃບຂໍເບີກນີ້ກ່ອນຈຶ່ງຈະຈ່າຍເຄື່ອງໄດ້");
-    }
-    if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
-      throw new AppError(403, "ບໍ່ມີສິດທິຈ່າຍເຄື່ອງໃຫ້ໃບຂໍເບີກນີ້");
-    }
-
-    for (const item of body.items) {
-      if (!item.quantityIssued) continue;
-
-      const [itemRows] = await conn.query(
-        "SELECT * FROM requisition_items WHERE id = ? AND requisition_id = ?",
-        [item.itemId, req.params.id],
-      );
-      if (!itemRows.length)
-        throw new AppError(404, `ບໍ່ພົບລາຍການເບີກ id ${item.itemId}`);
-
-      await conn.query(
-        "UPDATE requisition_items SET quantity_issued = ? WHERE id = ?",
-        [item.quantityIssued, item.itemId],
-      );
-
-      await recordMovement(conn, {
-        productId: itemRows[0].product_id,
-        warehouseId: requisition.warehouse_id,
-        movementType: "ISSUE",
-        quantity: -item.quantityIssued,
-        referenceTable: "requisitions",
-        referenceId: requisition.id,
-        createdBy: req.user.sub,
-      });
-    }
-
-    await conn.query(`UPDATE requisitions SET status = 'ISSUED' WHERE id = ?`, [
-      req.params.id,
-    ]);
-
-    await conn.commit();
-    const updated = await findRequisitionOr404(pool, req.params.id);
-    res.json(updated);
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
+// Warehouse Staff ຢືນຢັນວ່າໄດ້ຮັບເຄື່ອງແລ້ວ — ບໍ່ກະທົບສະຕັອກ (ຕັດໄປແລ້ວຕອນອະນຸມັດ) ແຄ່ປິດວຽກ/ບັນທຶກຜູ້ຮັບ
+const confirmReceipt = asyncHandler(async (req, res) => {
+  const requisition = await findRequisitionOr404(pool, req.params.id);
+  if (requisition.status !== "ISSUED") {
+    throw new AppError(400, "ຕ້ອງຈ່າຍເຄື່ອງກ່ອນຈຶ່ງຈະຢືນຢັນຮັບເຄື່ອງໄດ້");
   }
+  if (!(await userCanAccessWarehouse(req.user, requisition.warehouse_id))) {
+    throw new AppError(403, "ບໍ່ມີສິດທິຢືນຢັນຮັບເຄື່ອງໃບຂໍເບີກນີ້");
+  }
+  await pool.query(
+    `UPDATE requisitions SET status = 'RECEIVED', received_by = ?, received_at = NOW() WHERE id = ?`,
+    [req.user.sub, req.params.id],
+  );
+  const updated = await findRequisitionOr404(pool, req.params.id);
+  res.json(updated);
 });
 
 module.exports = {
@@ -225,5 +210,5 @@ module.exports = {
   createRequisition,
   approveRequisition,
   rejectRequisition,
-  issueRequisition,
+  confirmReceipt,
 };

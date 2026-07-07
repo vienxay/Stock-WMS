@@ -295,14 +295,19 @@ CREATE TABLE requisitions (
     employee_id         INT NOT NULL,
     department_id       INT,
     purpose             VARCHAR(255),
-    status              ENUM('PENDING','APPROVED','REJECTED','ISSUED') NOT NULL DEFAULT 'PENDING',
+    -- APPROVED เป็นค่าเก่าที่เก็บไว้เพื่อความเข้ากันได้ของ schema เท่านั้น — ตั้งแต่ merge approve+issue
+    -- เป็นขั้นตอนเดียว (Branch Admin กดอนุมัติ = ตัดสต็อกทันที) status จะข้ามจาก PENDING ไป ISSUED เลย
+    status              ENUM('PENDING','APPROVED','REJECTED','ISSUED','RECEIVED') NOT NULL DEFAULT 'PENDING',
     requested_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
-    approved_by         INT,
+    approved_by         INT,                          -- Branch Admin ที่กดอนุมัติ+จ่ายเครื่อง
     approved_at         DATETIME,
+    received_by         INT,                          -- Warehouse Staff ที่กดยืนยันรับเครื่อง (ไม่กระทบสต็อก แค่ปิดงาน)
+    received_at         DATETIME,
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
     FOREIGN KEY (employee_id) REFERENCES employees(id),
     FOREIGN KEY (department_id) REFERENCES departments(id),
-    FOREIGN KEY (approved_by) REFERENCES users(id)
+    FOREIGN KEY (approved_by) REFERENCES users(id),
+    FOREIGN KEY (received_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE requisition_items (

@@ -3,6 +3,8 @@ const fs = require("fs/promises");
 const path = require("path");
 const { Readable } = require("stream");
 const ExcelJS = require("exceljs");
+const bwipjs = require("bwip-js");
+const QRCode = require("qrcode");
 const pool = require("../config/db");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -76,6 +78,81 @@ const listProducts = asyncHandler(async (req, res) => {
   res.json(rows);
 });
 
+// ส่งออกรายการสินค้าเป็น Excel — ใช้ตัวกรองแบบเดียวกับ listProducts แต่ไม่จำกัดจำนวนแถว (เพดานกันไฟล์ใหญ่เกินไป)
+const exportProducts = asyncHandler(async (req, res) => {
+  const { q, categoryId, isActive } = req.query;
+
+  const conditions = [];
+  const params = [];
+
+  if (q) {
+    conditions.push(
+      "(p.sku LIKE ? OR p.name_lo LIKE ? OR p.name_cn LIKE ? OR p.barcode LIKE ?)",
+    );
+    const term = `%${q}%`;
+    params.push(term, term, term, term);
+  }
+  if (categoryId) {
+    conditions.push("p.category_id = ?");
+    params.push(categoryId);
+  }
+  if (isActive !== undefined) {
+    conditions.push("p.is_active = ?");
+    params.push(isActive === "true" ? 1 : 0);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const [rows] = await pool.query(
+    `SELECT p.sku, p.name_lo, p.name_cn, p.barcode, p.model_no, p.size,
+            c.name_lo AS category_name, p.unit_lo, p.reorder_point, p.is_active,
+            COALESCE(
+              (SELECT SUM(sb.quantity) FROM stock_balance sb WHERE sb.product_id = p.id),
+              0
+            ) AS total_quantity
+     FROM products p
+     LEFT JOIN categories c ON c.id = p.category_id
+     ${where}
+     ORDER BY p.name_lo
+     LIMIT 5000`,
+    params,
+  );
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Products");
+  sheet.columns = [
+    { header: "SKU", key: "sku", width: 15 },
+    { header: "ຊື່ສິນຄ້າ (ລາວ)", key: "name_lo", width: 30 },
+    { header: "ຊື່ສິນຄ້າ (ຈີນ)", key: "name_cn", width: 25 },
+    { header: "ບາໂຄດ", key: "barcode", width: 15 },
+    { header: "ຮຸ່ນ", key: "model_no", width: 15 },
+    { header: "ຂະໜາດ", key: "size", width: 15 },
+    { header: "ໝວດໝູ່", key: "category_name", width: 20 },
+    { header: "ໜ່ວຍ", key: "unit_lo", width: 10 },
+    { header: "ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ", key: "reorder_point", width: 22 },
+    { header: "ຈຳນວນຄົງເຫຼືອ", key: "total_quantity", width: 15 },
+    { header: "ສະຖານະ", key: "status_label", width: 12 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  sheet.addRows(
+    rows.map((r) => ({
+      ...r,
+      status_label: r.is_active ? "ໃຊ້ງານ" : "ປິດໃຊ້ງານ",
+    })),
+  );
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="products-export.xlsx"',
+  );
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
 const getProduct = asyncHandler(async (req, res) => {
   const product = await findProductOr404(req.params.id);
   const [images] = await pool.query(
@@ -97,6 +174,29 @@ const getProductStock = asyncHandler(async (req, res) => {
     [req.params.id],
   );
   res.json(rows);
+});
+
+// ບາໂຄດ CODE128 ຂອງ SKU — ໃຊ້ພິມຕິດສະຫຼາກສິນຄ້າ
+const getProductBarcode = asyncHandler(async (req, res) => {
+  const product = await findProductOr404(req.params.id);
+  const png = await bwipjs.toBuffer({
+    bcid: "code128",
+    text: product.sku,
+    scale: 3,
+    height: 12,
+    includetext: true,
+    textxalign: "center",
+  });
+  res.setHeader("Content-Type", "image/png");
+  res.send(png);
+});
+
+// QR Code ຂອງ SKU — ໃຊ້ສະແກນຄົ້ນຫາສິນຄ້າໄວໆ
+const getProductQrCode = asyncHandler(async (req, res) => {
+  const product = await findProductOr404(req.params.id);
+  const png = await QRCode.toBuffer(product.sku, { width: 300, margin: 1 });
+  res.setHeader("Content-Type", "image/png");
+  res.send(png);
 });
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -563,8 +663,11 @@ const bulkImportProducts = asyncHandler(async (req, res) => {
 
 module.exports = {
   listProducts,
+  exportProducts,
   getProduct,
   getProductStock,
+  getProductBarcode,
+  getProductQrCode,
   createProduct,
   updateProduct,
   deleteProduct,

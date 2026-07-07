@@ -51,3 +51,20 @@ export const downloadImportTemplate = () =>
   apiClient
     .get("/products/import-template", { responseType: "blob" })
     .then((r) => r.data);
+
+export const exportProducts = (params) =>
+  apiClient
+    .get("/products/export", { params, responseType: "blob" })
+    .then((r) => r.data);
+
+// เป็น endpoint ที่ต้อง login เข้าถึง (ไม่ใช่ static file) — ดึงมาเป็น blob แล้วสร้าง object URL
+// ใช้เป็น <img src> โดยตรงไม่ได้ เพราะ browser ไม่แนบ Authorization header ให้ตอนโหลดรูป
+export const getProductBarcode = (id) =>
+  apiClient
+    .get(`/products/${id}/barcode`, { responseType: "blob" })
+    .then((r) => r.data);
+
+export const getProductQrCode = (id) =>
+  apiClient
+    .get(`/products/${id}/qrcode`, { responseType: "blob" })
+    .then((r) => r.data);

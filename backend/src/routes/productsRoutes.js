@@ -10,7 +10,7 @@ router.use(authMiddleware);
 
 const canManageCatalog = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
-// ต้องมาก่อน "/:id" ไม่งั้น express จะจับ "import-template"/"bulk-import" เป็น :id
+// ต้องมาก่อน "/:id" ไม่งั้น express จะจับ "import-template"/"bulk-import"/"export" เป็น :id
 router.get("/import-template", canManageCatalog, ctrl.getImportTemplate);
 router.post(
   "/bulk-import",
@@ -19,10 +19,13 @@ router.post(
   ctrl.bulkImportProducts,
 );
 router.delete("/bulk-delete", canManageCatalog, ctrl.bulkDeleteProducts);
+router.get("/export", ctrl.exportProducts);
 
 router.get("/", ctrl.listProducts);
 router.get("/:id", ctrl.getProduct);
 router.get("/:id/stock", ctrl.getProductStock);
+router.get("/:id/barcode", ctrl.getProductBarcode);
+router.get("/:id/qrcode", ctrl.getProductQrCode);
 router.post("/", canManageCatalog, ctrl.createProduct);
 router.put("/:id", canManageCatalog, ctrl.updateProduct);
 router.delete("/:id", canManageCatalog, ctrl.deleteProduct);

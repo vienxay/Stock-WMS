@@ -9,12 +9,13 @@ import {
   bulkImportProducts,
   bulkDeleteProducts,
   downloadImportTemplate,
+  exportProducts,
 } from "../api/products";
 import { listCategories } from "../api/catalog";
 import { apiErrorMessage } from "../api/client";
 import { toastSuccess, toastError, confirmAction } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
-import { Pencil, Trash2, Upload, Download } from "lucide-react";
+import { Pencil, Trash2, Upload, Download, FileDown } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
@@ -172,35 +173,57 @@ export default function ProductsPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await exportProducts({
+        q: q || undefined,
+        categoryId: categoryId || undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "products-export.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toastError(apiErrorMessage(err));
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">ສິນຄ້າ</h2>
-        {canManage && (
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={handleDownloadTemplate}>
-              <Download size={15} /> ດາວໂຫຼດແບບຟอร์ม
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importMutation.isPending}
-            >
-              <Upload size={15} />
-              {importMutation.isPending
-                ? "ກຳລັງນຳເຂົ້າ..."
-                : "ນຳເຂົ້າຈາກ Excel/CSV"}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມສິນຄ້າ</Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={handleExport}>
+            <FileDown size={15} /> Export Excel
+          </Button>
+          {canManage && (
+            <>
+              <Button variant="secondary" onClick={handleDownloadTemplate}>
+                <Download size={15} /> ດາວໂຫຼດແບບຟอร์ม
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importMutation.isPending}
+              >
+                <Upload size={15} />
+                {importMutation.isPending
+                  ? "ກຳລັງນຳເຂົ້າ..."
+                  : "ນຳເຂົ້າຈາກ Excel/CSV"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button onClick={() => setModalOpen(true)}>+ ເພີ່ມສິນຄ້າ</Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-3 mb-4">

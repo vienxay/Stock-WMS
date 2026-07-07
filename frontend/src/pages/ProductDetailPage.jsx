@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -8,15 +8,32 @@ import {
   uploadProductImage,
   setPrimaryProductImage,
   deleteProductImage,
+  getProductBarcode,
+  getProductQrCode,
 } from '../api/products'
 import { listCategories } from '../api/catalog'
 import { apiErrorMessage } from '../api/client'
 import { toastSuccess, toastError, confirmAction } from '../lib/toast'
 import { useAuth } from '../context/AuthContext'
-import { Package, Barcode, Tag, Layers, Ruler, Boxes, AlertTriangle, ImagePlus, Warehouse } from 'lucide-react'
+import { Package, Barcode, Tag, Layers, Ruler, Boxes, AlertTriangle, ImagePlus, Warehouse, Download } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
 import FormField, { inputClass, selectClass } from '../components/ui/FormField'
+
+// ดึงรูป barcode/QR มาเป็น blob (ต้อง login ถึงจะเข้าถึงได้ ไม่ใช่ static file) แล้วแปลงเป็น object URL ไว้แสดง/ดาวน์โหลด
+function useImageObjectUrl(queryKey, queryFn) {
+  const { data: blob } = useQuery({ queryKey, queryFn })
+  const [url, setUrl] = useState(null)
+
+  useEffect(() => {
+    if (!blob) return undefined
+    const objectUrl = URL.createObjectURL(blob)
+    setUrl(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [blob])
+
+  return url
+}
 
 function InfoRow({ icon: Icon, label, children }) {
   return (
@@ -41,6 +58,9 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id) })
   const { data: stock } = useQuery({ queryKey: ['product-stock', id], queryFn: () => getProductStock(id) })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
+
+  const barcodeUrl = useImageObjectUrl(['product-barcode', id], () => getProductBarcode(id))
+  const qrCodeUrl = useImageObjectUrl(['product-qrcode', id], () => getProductQrCode(id))
 
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(null)
@@ -337,6 +357,46 @@ export default function ProductDetailPage() {
               <span className="text-sm">ຍັງບໍ່ມີຮູບພາບ</span>
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-5 mt-6">
+        <h3 className="font-semibold text-gray-700 mb-3">ບາໂຄດ / QR Code</h3>
+        <div className="flex flex-wrap gap-8">
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs text-gray-400">ບາໂຄດ (CODE128)</span>
+            {barcodeUrl ? (
+              <img src={barcodeUrl} alt="barcode" className="h-20" />
+            ) : (
+              <Spinner />
+            )}
+            {barcodeUrl && (
+              <a
+                href={barcodeUrl}
+                download={`${product.sku}-barcode.png`}
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+              >
+                <Download size={12} /> ດາວໂຫຼດ
+              </a>
+            )}
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs text-gray-400">QR Code</span>
+            {qrCodeUrl ? (
+              <img src={qrCodeUrl} alt="qrcode" className="h-20 w-20" />
+            ) : (
+              <Spinner />
+            )}
+            {qrCodeUrl && (
+              <a
+                href={qrCodeUrl}
+                download={`${product.sku}-qrcode.png`}
+                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+              >
+                <Download size={12} /> ດາວໂຫຼດ
+              </a>
+            )}
+          </div>
         </div>
       </div>
 

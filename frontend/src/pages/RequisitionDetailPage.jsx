@@ -7,7 +7,7 @@ import {
   confirmReceipt,
 } from "../api/requisitions";
 import { apiErrorMessage } from "../api/client";
-import { toastSuccess, toastError, confirmAction } from "../lib/toast";
+import { toastSuccess, toastError } from "../lib/toast";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
 import Spinner from "../components/ui/Spinner";
@@ -15,11 +15,15 @@ import StatusBadge from "../components/ui/StatusBadge";
 
 export default function RequisitionDetailPage() {
   const { id } = useParams();
-  const { hasRole } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
   const canApprove = hasRole("SUPER_ADMIN", "BRANCH_ADMIN");
-  const canConfirmReceipt = hasRole("WAREHOUSE_STAFF");
+  // ບໍ່ໃຊ້ hasRole ກົງໆ ເພາະ SUPER_ADMIN ຈະ bypass ໝົດທຸກ role check — ຕ້ອງການໃຫ້ເຫັນປຸ່ມນີ້ສະເພາະຄົນທີ່ເປັນ
+  // Warehouse Staff ລ້ວນໆເທົ່ານັ້ນ ບໍ່ໃຫ້ Super Admin/Branch Admin ເຫັນ ເພື່ອບໍ່ໃຫ້ສັບສົນວ່າໃຜເປັນຄົນກົດ
+  const canConfirmReceipt =
+    !hasRole("SUPER_ADMIN", "BRANCH_ADMIN") &&
+    (user?.roles || []).some((r) => r.code === "WAREHOUSE_STAFF");
 
   const { data: requisition, isLoading } = useQuery({
     queryKey: ["requisition", id],
@@ -58,27 +62,11 @@ export default function RequisitionDetailPage() {
     onError: (err) => toastError(apiErrorMessage(err)),
   });
 
-  const handleApprove = async () => {
-    const result = await confirmAction({
-      title: "ອະນຸມັດໃບເບີກນີ້?",
-      text: "ລະບົບຈະຈ່າຍເຄື່ອງຕາມຈຳນວນທີ່ຂໍເບີກມາ ແລະຕັດສະຕັອກທັນທີ",
-      icon: "question",
-      confirmButtonColor: "#2563eb",
-    });
-    if (result.isConfirmed) approveMutation.mutate();
-  };
+  const handleApprove = () => approveMutation.mutate();
 
-  const handleReject = async () => {
-    const result = await confirmAction({ title: "ປະຕິເສດໃບເບີກນີ້?" });
-    if (result.isConfirmed) rejectMutation.mutate();
-  };
+  const handleReject = () => rejectMutation.mutate();
 
-  const handleConfirmReceipt = async () => {
-    const result = await confirmAction({
-      title: "ຢືນຢັນວ່າໄດ້ຮັບເຄື່ອງແລ້ວ?",
-    });
-    if (result.isConfirmed) confirmReceiptMutation.mutate();
-  };
+  const handleConfirmReceipt = () => confirmReceiptMutation.mutate();
 
   if (isLoading || !requisition) return <Spinner />;
 

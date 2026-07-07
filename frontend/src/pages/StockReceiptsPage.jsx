@@ -11,6 +11,7 @@ import { PackagePlus } from "lucide-react";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Spinner from "../components/ui/Spinner";
+import StatusBadge from "../components/ui/StatusBadge";
 import ItemRowsEditor from "../components/ui/ItemRowsEditor";
 import FormField, { inputClass, selectClass } from "../components/ui/FormField";
 
@@ -22,6 +23,7 @@ const EMPTY_FORM = {
   receivedDate: new Date().toISOString().slice(0, 10),
   items: [{ ...EMPTY_ITEM }],
 };
+const STATUS_OPTIONS = ["PENDING", "APPROVED", "REJECTED"];
 
 export default function StockReceiptsPage() {
   const { hasRole } = useAuth();
@@ -29,12 +31,13 @@ export default function StockReceiptsPage() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [status, setStatus] = useState("");
 
   const canCreate = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["stock-receipts"],
-    queryFn: () => listReceipts(),
+    queryKey: ["stock-receipts", { status }],
+    queryFn: () => listReceipts({ status: status || undefined }),
   });
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses"],
@@ -93,6 +96,19 @@ export default function StockReceiptsPage() {
         )}
       </div>
 
+      <select
+        className={`${selectClass} max-w-xs mb-4`}
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+      >
+        <option value="">-- ທຸກສະຖານະ --</option>
+        {STATUS_OPTIONS.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+
       {isLoading ? (
         <Spinner />
       ) : (
@@ -105,6 +121,7 @@ export default function StockReceiptsPage() {
               <th className="px-4 py-3">ສະກຸນເງິນ</th>
               <th className="px-4 py-3">ວັນທີຮັບ</th>
               <th className="px-4 py-3">ຜູ້ບັນທຶກ</th>
+              <th className="px-4 py-3">ສະຖານະ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -122,11 +139,14 @@ export default function StockReceiptsPage() {
                 <td className="px-4 py-3">{r.currency_code}</td>
                 <td className="px-4 py-3">{r.received_date?.slice(0, 10)}</td>
                 <td className="px-4 py-3">{r.created_by_username}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={r.status} />
+                </td>
               </tr>
             ))}
             {!data?.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   ຍັງບໍ່ມີການຮັບສິນຄ້າເຂົ້າ
                 </td>
               </tr>

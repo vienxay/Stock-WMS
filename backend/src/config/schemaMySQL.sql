@@ -231,11 +231,15 @@ CREATE TABLE stock_receipts (
     currency_code       VARCHAR(3) NOT NULL,
     exchange_rate_used  DECIMAL(18,6) NOT NULL DEFAULT 1,  -- ล็อกอัตรา ณ วันที่รับเข้า
     received_date       DATE NOT NULL,
+    status              ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
     created_by          INT NOT NULL,
     created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+    approved_by         INT,
+    approved_at         DATETIME,
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
     FOREIGN KEY (currency_code) REFERENCES currencies(code),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (approved_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE stock_receipt_items (

@@ -14,5 +14,20 @@ router.post(
   requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
   ctrl.createReceipt,
 );
+router.put(
+  "/:id",
+  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
+  ctrl.updateReceipt,
+);
+router.put(
+  "/:id/approve",
+  requireRole("BRANCH_ADMIN"),
+  ctrl.approveReceipt,
+);
+router.put(
+  "/:id/reject",
+  requireRole("BRANCH_ADMIN"),
+  ctrl.rejectReceipt,
+);
 
 module.exports = router;

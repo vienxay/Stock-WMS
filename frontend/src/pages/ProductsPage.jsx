@@ -53,7 +53,7 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const fileInputRef = useRef(null);
 
-  const canManage = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canManage = hasRole("BRANCH_ADMIN");
 
   const { data, isLoading } = useQuery({
     queryKey: ["products", { q, categoryId }],
@@ -403,16 +403,18 @@ export default function ProductsPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/products/${p.id}`);
-                      }}
-                      title="ແກ້ໄຂ"
-                      className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                      <Pencil size={15} />
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/products/${p.id}`);
+                        }}
+                        title="ແກ້ໄຂ"
+                        className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    )}
                     {canDelete && (
                       <button
                         onClick={(e) => {

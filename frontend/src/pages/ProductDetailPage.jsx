@@ -54,7 +54,8 @@ export default function ProductDetailPage() {
   const queryClient = useQueryClient()
   const fileInputRef = useRef(null)
 
-  const canManage = hasRole('BRANCH_ADMIN', 'WAREHOUSE_STAFF')
+  const canManage = hasRole('BRANCH_ADMIN')
+  const canManageImages = hasRole('BRANCH_ADMIN', 'WAREHOUSE_STAFF')
   const canSeeEmployees = hasRole('SUPER_ADMIN', 'BRANCH_ADMIN')
 
   const { data: product, isLoading } = useQuery({ queryKey: ['product', id], queryFn: () => getProduct(id) })
@@ -374,7 +375,7 @@ export default function ProductDetailPage() {
         <div className="bg-white rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-700">ຮູບພາບ</h3>
-            {canManage && (
+            {canManageImages && (
               <>
                 <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
                 <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
@@ -394,7 +395,7 @@ export default function ProductDetailPage() {
                       ຫຼັກ
                     </span>
                   )}
-                  {canManage && (
+                  {canManageImages && (
                     <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
                       {!img.is_primary && (
                         <button
@@ -415,15 +416,20 @@ export default function ProductDetailPage() {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : canManageImages ? (
             <button
               type="button"
-              onClick={() => canManage && fileInputRef.current?.click()}
+              onClick={() => fileInputRef.current?.click()}
               className="w-full flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/40 transition-colors"
             >
               <ImagePlus size={28} strokeWidth={1.5} />
               <span className="text-sm">ຍັງບໍ່ມີຮູບພາບ</span>
             </button>
+          ) : (
+            <div className="w-full flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-gray-200 rounded-xl text-gray-400">
+              <ImagePlus size={28} strokeWidth={1.5} />
+              <span className="text-sm">ຍັງບໍ່ມີຮູບພາບ</span>
+            </div>
           )}
         </div>
       </div>

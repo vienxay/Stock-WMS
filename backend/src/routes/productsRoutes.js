@@ -8,7 +8,8 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-const canManageCatalog = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+const canManageCatalog = requireRole("BRANCH_ADMIN");
+const canManageImages = requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
 const canDelete = requireRole();
 
 // ต้องมาก่อน "/:id" ไม่งั้น express จะจับ "import-template"/"bulk-import"/"export" เป็น :id
@@ -34,18 +35,18 @@ router.delete("/:id", canDelete, ctrl.deleteProduct);
 
 router.post(
   "/:id/images",
-  canManageCatalog,
+  canManageImages,
   uploadProductImage.single("image"),
   ctrl.addProductImage,
 );
 router.put(
   "/:id/images/:imageId/primary",
-  canManageCatalog,
+  canManageImages,
   ctrl.setPrimaryProductImage,
 );
 router.delete(
   "/:id/images/:imageId",
-  canManageCatalog,
+  canManageImages,
   ctrl.deleteProductImage,
 );
 

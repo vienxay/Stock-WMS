@@ -31,11 +31,15 @@ export default function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
 
-          <Route path="/stock-receipts" element={<StockReceiptsPage />} />
           <Route
-            path="/stock-receipts/:id"
-            element={<StockReceiptDetailPage />}
-          />
+            element={<ProtectedRoute roles={["SUPER_ADMIN", "BRANCH_ADMIN"]} />}
+          >
+            <Route path="/stock-receipts" element={<StockReceiptsPage />} />
+            <Route
+              path="/stock-receipts/:id"
+              element={<StockReceiptDetailPage />}
+            />
+          </Route>
 
           <Route path="/branch-requests" element={<BranchRequestsPage />} />
           <Route

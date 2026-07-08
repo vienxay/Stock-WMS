@@ -24,7 +24,7 @@ export default function StockReceiptDetailPage() {
   const queryClient = useQueryClient();
 
   const canApprove = hasRole("BRANCH_ADMIN");
-  const canEdit = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canEdit = hasRole("BRANCH_ADMIN");
 
   const { data: receipt, isLoading } = useQuery({
     queryKey: ["stock-receipt", id],

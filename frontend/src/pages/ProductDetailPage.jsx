@@ -269,7 +269,7 @@ export default function ProductDetailPage() {
               <FormField label="ຈຳນວນເຕືອນສິນຄ້າໃກ້ໝົດ">
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   className={inputClass}
                   value={form.reorderPoint}
                   onChange={(e) => setForm({ ...form, reorderPoint: e.target.value })}

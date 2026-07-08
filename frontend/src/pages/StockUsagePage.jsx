@@ -165,7 +165,7 @@ export default function StockUsagePage() {
           <FormField label="ຈຳນວນທີ່ນຳໃຊ້">
             <input
               type="number"
-              step="0.01"
+              step="1"
               min="0"
               className={inputClass}
               value={form.quantity}

@@ -7,18 +7,10 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get("/", ctrl.listReceipts);
-router.get("/:id", ctrl.getReceipt);
-router.post(
-  "/",
-  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
-  ctrl.createReceipt,
-);
-router.put(
-  "/:id",
-  requireRole("BRANCH_ADMIN", "WAREHOUSE_STAFF"),
-  ctrl.updateReceipt,
-);
+router.get("/", requireRole("BRANCH_ADMIN"), ctrl.listReceipts);
+router.get("/:id", requireRole("BRANCH_ADMIN"), ctrl.getReceipt);
+router.post("/", requireRole("BRANCH_ADMIN"), ctrl.createReceipt);
+router.put("/:id", requireRole("BRANCH_ADMIN"), ctrl.updateReceipt);
 router.put(
   "/:id/approve",
   requireRole("BRANCH_ADMIN"),

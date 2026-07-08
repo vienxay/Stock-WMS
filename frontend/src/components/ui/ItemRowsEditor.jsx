@@ -61,7 +61,7 @@ export default function ItemRowsEditor({
               </select>
               <input
                 type="number"
-                step="0.01"
+                step="1"
                 className={`${inputClass} ${qtySpan} bg-white`}
                 placeholder="0"
                 value={item[quantityField]}
@@ -73,9 +73,9 @@ export default function ItemRowsEditor({
               {priceField && (
                 <input
                   type="number"
-                  step="0.0001"
+                  step="1"
                   className={`${inputClass} col-span-3 bg-white`}
-                  placeholder="0.00"
+                  placeholder="0"
                   value={item[priceField.key]}
                   onChange={(e) =>
                     onUpdate(idx, { [priceField.key]: e.target.value })

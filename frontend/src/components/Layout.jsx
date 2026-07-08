@@ -21,10 +21,18 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { getSettings } from "../api/settings";
 
-const NAV_ITEMS = [
+const NAV_ITEMS_BEFORE_RECEIPTS = [
   { to: "/", label: "ໜ້າຫຼັກ", end: true, icon: LayoutDashboard },
   { to: "/products", label: "ສິນຄ້າ", icon: Package },
-  { to: "/stock-receipts", label: "ຮັບເຂົ້າສິນຄ້າ", icon: PackagePlus },
+];
+
+const STOCK_RECEIPTS_NAV_ITEM = {
+  to: "/stock-receipts",
+  label: "ຮັບເຂົ້າສິນຄ້າ",
+  icon: PackagePlus,
+};
+
+const NAV_ITEMS_AFTER_RECEIPTS = [
   { to: "/branch-requests", label: "ໂອນຍ້າຍສິນຄ້າ", icon: ArrowLeftRight },
   { to: "/requisitions", label: "ເບີກຈ່າຍສິນຄ້າ", icon: PackageMinus },
   { to: "/stock-usages", label: "ນຳໃຊ້ອຸປະກອນ", icon: Wrench },
@@ -89,14 +97,42 @@ export default function Layout() {
                 ລະບົບສາງສິນຄ້າ
               </div>
               <div className="text-slate-400 text-xs truncate">
-                {settings?.company_name_lo || settings?.company_name || "Stock WMS"}
+                {settings?.company_name_lo ||
+                  settings?.company_name ||
+                  "Stock WMS"}
               </div>
             </div>
           )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS_BEFORE_RECEIPTS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={navLinkClass}
+              title={item.label}
+            >
+              <item.icon size={18} className="shrink-0" />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </NavLink>
+          ))}
+          {hasRole("SUPER_ADMIN", "BRANCH_ADMIN") && (
+            <NavLink
+              to={STOCK_RECEIPTS_NAV_ITEM.to}
+              className={navLinkClass}
+              title={STOCK_RECEIPTS_NAV_ITEM.label}
+            >
+              <STOCK_RECEIPTS_NAV_ITEM.icon size={18} className="shrink-0" />
+              {!collapsed && (
+                <span className="truncate">
+                  {STOCK_RECEIPTS_NAV_ITEM.label}
+                </span>
+              )}
+            </NavLink>
+          )}
+          {NAV_ITEMS_AFTER_RECEIPTS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -122,7 +158,9 @@ export default function Layout() {
               >
                 <ORGANIZATION_NAV_ITEM.icon size={18} className="shrink-0" />
                 {!collapsed && (
-                  <span className="truncate">{ORGANIZATION_NAV_ITEM.label}</span>
+                  <span className="truncate">
+                    {ORGANIZATION_NAV_ITEM.label}
+                  </span>
                 )}
               </NavLink>
               {hasRole("SUPER_ADMIN") &&

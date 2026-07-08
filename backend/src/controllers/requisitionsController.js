@@ -30,6 +30,20 @@ async function findRequisitionOr404(runner, id) {
   return rows[0];
 }
 
+async function findRequisitionWithNamesOr404(runner, id) {
+  const [rows] = await runner.query(
+    `SELECT r.*, w.name AS warehouse_name, e.full_name AS employee_name, d.name AS department_name
+     FROM requisitions r
+     JOIN warehouses w ON w.id = r.warehouse_id
+     JOIN employees e ON e.id = r.employee_id
+     LEFT JOIN departments d ON d.id = r.department_id
+     WHERE r.id = ?`,
+    [id],
+  );
+  if (!rows.length) throw new AppError(404, "ບໍ່ພົບໃບຂໍເບີກນີ້");
+  return rows[0];
+}
+
 const listRequisitions = asyncHandler(async (req, res) => {
   const ownWarehouseId = warehouseStaffWarehouseId(req.user);
   const { status, employeeId } = req.query;
@@ -64,7 +78,7 @@ const listRequisitions = asyncHandler(async (req, res) => {
 });
 
 const getRequisition = asyncHandler(async (req, res) => {
-  const requisition = await findRequisitionOr404(pool, req.params.id);
+  const requisition = await findRequisitionWithNamesOr404(pool, req.params.id);
   const [items] = await pool.query(
     `SELECT ri.*, p.sku, p.name_lo AS product_name
      FROM requisition_items ri

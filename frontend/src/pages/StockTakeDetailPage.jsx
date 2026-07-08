@@ -144,7 +144,7 @@ function StockTakeItemRow({ item, editable, onSave, saving }) {
         {editable ? (
           <input
             type="number"
-            step="0.01"
+            step="1"
             className={`${inputClass} w-28`}
             value={value}
             onChange={(e) => setValue(e.target.value)}

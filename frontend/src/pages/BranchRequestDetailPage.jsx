@@ -195,7 +195,7 @@ export default function BranchRequestDetailPage() {
                 </span>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   className={`${inputClass} w-28`}
                   value={approveQtys[it.id] ?? ""}
                   onChange={(e) =>

@@ -33,7 +33,7 @@ export default function StockReceiptsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [status, setStatus] = useState("");
 
-  const canCreate = hasRole("BRANCH_ADMIN", "WAREHOUSE_STAFF");
+  const canCreate = hasRole("BRANCH_ADMIN");
 
   const { data, isLoading } = useQuery({
     queryKey: ["stock-receipts", { status }],
